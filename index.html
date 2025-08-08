@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>テキストQRコード相互変換ツール</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+<style>
+:root{--fg:#222;--bg:#fff;--muted:#666;--pri:#2d7ef7;--ok:#27ae60;--err:#e74c3c;--br:#ddd;}
+html,body{height:100%}
+body{margin:0;font-family:Meiryo,"Yu Gothic",sans-serif;color:var(--fg);background:var(--bg);display:flex;flex-direction:column}
+
+/* ヘッダー */
+header{background:#2d2d2d;color:#fff;padding:12px 16px}
+header .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-size:16px}
+.header-actions{display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;background:#444;color:#fff;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #666}
+
+/* レイアウト */
+.container{padding:12px;display:flex;flex-direction:column;gap:12px}
+
+/* モード切替（選択中＝暗め） */
+.mode{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--br);border-radius:999px;overflow:hidden}
+.seg button{padding:8px 14px;border:0;background:#fff;color:#222;cursor:pointer}
+.seg button.sel{background:#e3e6ed;color:#111;font-weight:700;border-color:#888}
+.seg button:not(.sel):hover{background:#f7f9ff}
+.seg button.sel:hover{filter:brightness(0.92)}
+
+/* 2カラム（<900px=1列 / ≥900px=2列） */
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+.panel{border:1px solid var(--br);border-radius:8px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.panel h2{margin:0;font-size:15px}
+textarea{width:100%;min-height:220px;resize:vertical;font-size:16px;line-height:1.5;padding:10px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.right{justify-content:flex-end}
+
+/* ボタン/入力 */
+button,select,input[type="text"],input[type="file"],input[type="number"]{font-size:15px;padding:8px 12px;border:1px solid #bbb;border-radius:6px;background:#fff}
+button{cursor:pointer;transition:background-color .15s ease,transform .06s ease,box-shadow .15s ease,filter .15s ease}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 2px 8px rgb(0 0 0 / .12);filter:brightness(1.03)}
+button:active:not(:disabled){transform:translateY(0);box-shadow:0 1px 3px rgb(0 0 0 / .20);filter:brightness(0.95)}
+button:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+button.pri{background:var(--pri);color:#fff;border:none}
+button.ok{background:var(--ok);color:#fff;border:none}
+button.err{background:var(--err);color:#fff;border:none}
+button:disabled{opacity:.6;cursor:default}
+.muted{color:var(--muted);font-size:13px}
+.card{border:1px dashed #ccc;border-radius:8px;padding:10px}
+
+/* リップル */
+button.ripple{--ripple-x:50%;--ripple-y:50%;--ripple-color:rgba(255,255,255,.35);background-image:radial-gradient(circle at var(--ripple-x) var(--ripple-y),var(--ripple-color) 0,var(--ripple-color) 10%,transparent 11%);background-repeat:no-repeat;background-size:0 0}
+button.rippling{background-size:200% 200%}
+
+/* スライダー（シーク/速度） */
+input[type="range"]{width:100%}
+input[type="range"]::-webkit-slider-thumb{transition:transform .12s ease}
+input[type="range"]:hover::-webkit-slider-thumb,input[type="range"]:focus-visible::-webkit-slider-thumb{transform:scale(1.25)}
+input[type="range"]::-moz-range-thumb{transition:transform .12s ease}
+input[type="range"]:hover::-moz-range-thumb,input[type="range"]:focus-visible::-moz-range-thumb{transform:scale(1.25)}
+/* FPS数値ボックス */
+.fps-wrap input[type="number"]{width:92px;text-align:right}
+
+/* 送信用QR */
+.qr-wrap{display:flex;align-items:center;justify-content:center;height:340px;background:#fff;border:1px solid #eee;border-radius:8px;overflow:hidden}
+.qr-controls{display:flex;flex-direction:column;gap:10px}
+.qr-scrub{display:flex;align-items:center;gap:8px}
+.qr-bottom{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap}
+.time{min-width:60px;text-align:right;font-variant-numeric:tabular-nums}
+.range{flex:1}
+.fps-wrap{display:flex;align-items:center;gap:8px}
+.nohdr{display:flex;align-items:center;gap:6px;margin-left:12px}
+
+/* 受信（カメラ/HID） */
+.cam-wrap{display:flex;flex-direction:column;gap:10px}
+.video-box{position:relative}
+video#cam{width:100%;max-height:320px;background:#000;border-radius:8px;display:block}
+canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.rx-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important;}}
+button[data-tip]::after, button[data-tip]::before { display:none !important; }
+
+/* ヘルプモーダル */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:10000}
+.modal.show{display:flex}
+.modal .box{width:min(900px,92vw);max-height:86vh;overflow:auto;background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.modal .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--br);padding-bottom:8px;margin-bottom:10px}
+.modal .btn-close{background:#eee}
+.modal .sec{margin:12px 0}
+.modal h3{margin:6px 0 4px}
+.modal ul{margin:6px 0 6px 1.2em;padding:0}
+.qr-contact{display:flex;gap:12px;align-items:center}
+.qr-cell{width:120px;height:120px;border:1px solid #eee;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
+kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-radius:4px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+</style>
+
+<!-- CDN -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <h1>テキスト/ファイル ⇄ Base64 & 連続QRブリッジ</h1>
+    <div class="header-actions">
+      <span id="ver" class="badge" title="バージョン"></span>
+      <button id="btn-help" class="pri ripple">ヘルプ</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- モード切替 -->
+  <div class="mode">
+    <div class="seg" role="tablist" aria-label="mode">
+      <button id="m-enc" class="sel" role="tab">テキスト → Base64</button>
+      <button id="m-dec" role="tab">Base64 → テキスト</button>
+      <button id="m-file" role="tab">ファイル → Base64</button>
+      <button id="m-b2f" role="tab">Base64 → ファイル</button>
+      <button id="m-cam" role="tab">QR→Base64</button>
+      <button id="m-camtxt" role="tab">QR→テキスト</button>
+      <button id="m-cam-multi" role="tab">QR（複数）→Base64</button>
+      <button id="m-camtxt-multi" role="tab">QR（複数）→テキスト</button>
+    </div>
+  </div>
+
+  <!-- テキストI/O -->
+  <div class="grid" id="text-io">
+    <!-- 入力 -->
+    <section class="panel" id="panel-input">
+      <h2>入力</h2>
+      <textarea id="input" placeholder="ここにテキストまたはBase64を入力…"></textarea>
+
+      <div id="drop-zone" class="card" style="display:none;">
+        <div class="muted">ファイルをドラッグ＆ドロップ または <button id="btn-file-choose" class="ripple">ファイル選択</button></div>
+        <input id="file-input" type="file" style="display:none"/>
+      </div>
+
+      <input id="filename" type="text" placeholder="保存時のファイル名（拡張子なし）" style="display:none"/>
+      <div id="filetype-wrap" class="row" style="display:none;">
+        <label>形式
+          <select id="filetype">
+            <option value="pdf">PDF</option>
+            <option value="docx">Word (.docx)</option>
+            <option value="xlsx">Excel (.xlsx)</option>
+            <option value="pptx">PowerPoint (.pptx)</option>
+            <option value="png">PNG</option>
+            <option value="jpg">JPEG</option>
+            <option value="exe">EXE</option>
+            <option value="bin">バイナリ (.bin)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="btn-paste" class="ripple">クリップボードから貼り付け</button>
+        <span class="muted">※ テキスト→Base64 / Base64→テキスト / Base64→ファイル で表示</span>
+      </div>
+
+      <div class="row right">
+        <button id="btn-convert" class="ok ripple">変換（Ctrl+Enter）</button>
+        <button id="btn-clear" class="err ripple">クリア</button>
+        <!-- B2Fのとき ここへ「保存」ボタンを移動 -->
+      </div>
+    </section>
+
+    <!-- 出力 -->
+    <section class="panel" id="panel-output">
+      <h2>出力</h2>
+      <textarea id="output" placeholder="ここに結果が表示されます"></textarea>
+      <div class="row" id="row-output-actions">
+        <button id="btn-copy" class="pri ripple">コピー</button>
+        <button id="btn-qrshow" class="pri ripple">QR表示（連続）</button>
+        <button id="btn-save" class="pri ripple" style="display:none;">名前を付けて保存</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 送信用QR -->
+  <section class="panel" id="qr-send">
+    <h2>QRシーケンス出力</h2>
+    <div class="qr-controls">
+      <div class="qr-wrap" id="qr-display"></div>
+      <div class="qr-scrub">
+        <span id="elapsed" class="time">00:00</span>
+        <input id="scrub" class="range" type="range" min="0" max="0" step="1" value="0"/>
+        <span id="duration" class="time">00:00</span>
+        <span id="frame-ind" class="muted">0 / 0</span>
+      </div>
+      <div class="qr-bottom">
+        <button id="btn-prev" class="ripple">⏮</button>
+        <button id="btn-play" class="ripple">▶</button>
+        <button id="btn-next" class="ripple">⏭</button>
+        <div class="fps-wrap">
+          <label>速度(FPS)
+            <input id="fps" type="range" min="0.5" max="120" step="0.1" value="1.0"/>
+          </label>
+          <input id="fps-num" type="number" min="0.5" max="120" step="0.1" value="1.0" />
+        </div>
+        <label class="nohdr">
+          <input id="no-header" type="checkbox" checked>
+          ヘッダなし（EMR向け）
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- 受信用（CAM専用） -->
+  <section class="panel" id="qr-recv" style="display:none;">
+    <h2>QR受信（カメラ / HID）→ 出力へ反映</h2>
+    <div class="cam-wrap">
+      <div class="rx-row">
+        <button id="btn-scan-start" class="pri ripple">カメラ開始</button>
+        <button id="btn-scan-stop" class="ripple">停止</button>
+        <button id="btn-rx-clear" class="err ripple">受信クリア</button>
+        <span class="muted">※HTTPS/localhostで動作。ヘッダ有れば順序復元します。</span>
+      </div>
+
+      <!-- QR→テキスト系だけ表示：ヘッダ無し1枚で自動停止 -->
+      <div class="rx-row" id="auto-stop-wrap" style="display:none;">
+        <label class="nohdr">
+          <input id="auto-stop-hl" type="checkbox">
+          ヘッダなしは1枚読んだら自動停止（QR→テキスト）
+        </label>
+      </div>
+
+      <!-- 複数ROI設定（複数モードで表示） -->
+      <div class="rx-row" id="grid-opts" style="display:none;">
+        <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
+        <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
+        <label>ROI余白(px): <input id="roi-margin" type="number" min="0" max="80" value="16"></label>
+        <span class="muted">HTA側のタイル数に合わせてください（例: 2×2）。</span>
+      </div>
+
+      <div class="video-box">
+        <video id="cam" playsinline muted></video>
+        <canvas id="cam-overlay" class="overlay"></canvas>
+      </div>
+      <canvas id="cam-canvas" style="display:none"></canvas>
+
+      <div class="muted">受信進捗（ヘッダ付き時）: <span id="rx-status">0/0</span></div>
+
+      <div class="rx-row">
+        <input id="hid-line" type="text" style="flex:1;" placeholder="HIDスキャナ/貼り付けで1フレーム、Enterで追加"/>
+        <button id="btn-append-hid" class="ripple">受信→反映</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Help Modal -->
+<div id="help-modal" class="modal" aria-hidden="true">
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="topbar">
+      <h2 id="help-title">ヘルプ</h2>
+      <div class="row">
+        <button id="btn-help-print" class="ripple">印刷</button>
+        <button id="btn-help-close" class="btn-close ripple">閉じる</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="sec">
+        <h3>概要</h3>
+      <ul>
+<li>医局のバーコードリーダーDS9308を使ってカルテに情報を送り込めるプログラムです。</li>
+<li>①テキスト/ファイルをBase64という文字列の変換を介して<b>QRコード化</b>します。</li>
+<li>②QRコードをカルテに繋いだバーコードリーダーにかざしましょう。入力したテキストは共有フォルダの鈴木のプログラムにある変換プログラムでBase64を文字列あるいはファイルに変換しましょう。</li>
+
+          <li>QRコードからカルテ内のファイル、データの受信も可能です。</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h3>モード</h3>
+        <ul>
+          <li><b>テキスト ↔ Base64</b>：相互変換。<kbd>Ctrl</kbd>+<kbd>Enter</kbd>で変換。</li>
+          <li><b>ファイル → Base64</b>：ドラッグ&ドロップでBase64化。</li>
+          <li><b>Base64 → ファイル</b>：入力のBase64を「名前を付けて保存」で復元。</li>
+          <li><b>QR→Base64 / QR→テキスト</b>：単一QRを連続受信。検出枠ガイド表示。</li>
+          <li><b>QR（複数）→Base64 / QR（複数）→テキスト</b>：映像をグリッド分割して複数同時読み取り。</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h3>連続QR送出</h3>
+        <ul>
+          <li><b>QR表示（連続）</b>で最大約700文字/枚に分割して送出します。</li>
+          <li>FPSは<b>0.5〜120</b>。スライダーまたは数値ボックスで指定可能。</li>
+          <li><b>ヘッダなし（EMR向け）</b>／<b>ヘッダあり</b>（順序復元＆整合性チェック）。</li>
+        </ul>
+      </div>
+
+      <div class="sec">
+        <h3>バージョン</h3>
+        <div id="about-version" class="muted"></div>
+      </div>
+
+      <div class="sec">
+        <h3>お問い合わせ</h3>
+        <div class="qr-contact">
+          <div id="help-qr" class="qr-cell" aria-label="連絡先QR"></div>
+          <div>
+            <div><strong>メール:</strong> <a href="mailto:suzuki.yuya.kitasato@gmail.com">suzuki.yuya.kitasato@gmail.com</a></div>
+            <div class="muted">QRからメールアドレスを読み取れます。</div>
+            <div class="row" style="margin-top:6px;">
+              <button id="btn-copy-mail" class="ripple">メールアドレスをコピー</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec muted">© S2 Yuya Suzuki, Okazaki Medical Center</div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+'use strict';
+/* ====== バージョン情報 ====== */
+const APP_VERSION = 'v2025.08.09-fps120';
+const APP_BUILD   = '2025-08-09';
+document.getElementById('ver').textContent = APP_VERSION;
+
+/* ====== 要素取得 & ユーティリティ ====== */
+const $ = id => document.getElementById(id);
+const on = (node, ev, fn) => { if (node) node.addEventListener(ev, fn, false); };
+
+const el = {
+  // tabs
+  mEnc: $('m-enc'), mDec: $('m-dec'), mFile: $('m-file'), mB2F: $('m-b2f'),
+  mCamB64: $('m-cam'), mCamTxt: $('m-camtxt'),
+  mCamB64M: $('m-cam-multi'), mCamTxtM: $('m-camtxt-multi'),
+  // panels
+  textIO: $('text-io'), panelInput: $('panel-input'), panelOutput: $('panel-output'),
+  // widgets
+  input: $('input'), output: $('output'),
+  drop: $('drop-zone'), fileBtn: $('btn-file-choose'), fileInput: $('file-input'),
+  filename: $('filename'), filetypeWrap: $('filetype-wrap'), filetype: $('filetype'),
+  btnPaste: $('btn-paste'),
+  btnClear: $('btn-clear'), btnCopy: $('btn-copy'), btnQR: $('btn-qrshow'), btnSave: $('btn-save'), btnConv: $('btn-convert'),
+  rowOut: $('row-output-actions'),
+  // send
+  qrSend: $('qr-send'), qrWrap: $('qr-display'), scrub: $('scrub'),
+  elapsed: $('elapsed'), duration: $('duration'), frameInd: $('frame-ind'),
+  btnPrev: $('btn-prev'), btnNext: $('btn-next'), btnPlay: $('btn-play'),
+  fps: $('fps'), fpsNum: $('fps-num'), noHdr: $('no-header'),
+  // recv
+  qrRecv: $('qr-recv'),
+  cam: $('cam'), camCanvas: $('cam-canvas'), camOverlay: $('cam-overlay'),
+  btnScanStart: $('btn-scan-start'), btnScanStop: $('btn-scan-stop'), btnRxClear: $('btn-rx-clear'),
+  rxStatus: $('rx-status'), hidLine: $('hid-line'), btnHidAppend: $('btn-append-hid'),
+  // options
+  autoStopWrap: $('auto-stop-wrap'), autoStopHL: $('auto-stop-hl'),
+  gridOpts: $('grid-opts'), rows: $('rows'), cols: $('cols'), roiMargin: $('roi-margin')
+};
+el.rowIn = document.querySelector('#panel-input .row.right');
+
+/* ====== モード ====== */
+let mode = 'ENC'; // ENC, DEC, FILE, B2F, CAM_B64, CAM_TXT, CAM_B64_MULTI, CAM_TXT_MULTI
+const tabState = {
+  ENC:{in:'',out:''}, DEC:{in:'',out:''}, FILE:{in:'',out:''}, B2F:{in:'',out:''},
+  CAM_B64:{in:'',out:''}, CAM_TXT:{in:'',out:''}, CAM_B64_MULTI:{in:'',out:''}, CAM_TXT_MULTI:{in:'',out:''}
+};
+const isCamMode = () => /^CAM_/.test(mode);
+const isMultiMode = () => mode==='CAM_B64_MULTI' || mode==='CAM_TXT_MULTI';
+const isTextCamMode = () => mode==='CAM_TXT' || mode==='CAM_TXT_MULTI';
+
+function setMode(to){
+  tabState[mode].in  = el.input?.value ?? '';
+  tabState[mode].out = el.output?.value ?? '';
+  mode = to;
+
+  [el.mEnc,el.mDec,el.mFile,el.mB2F,el.mCamB64,el.mCamTxt,el.mCamB64M,el.mCamTxtM].forEach(b=>b&&b.classList.remove('sel'));
+  ({ENC:el.mEnc,DEC:el.mDec,FILE:el.mFile,B2F:el.mB2F,CAM_B64:el.mCamB64,CAM_TXT:el.mCamTxt,CAM_B64_MULTI:el.mCamB64M,CAM_TXT_MULTI:el.mCamTxtM})[mode]?.classList.add('sel');
+
+  if (el.input)  el.input.value  = tabState[mode].in;
+  if (el.output) el.output.value = tabState[mode].out;
+
+  const isText=(mode==='ENC'||mode==='DEC');
+  const isFile=(mode==='FILE');
+  const isB2F =(mode==='B2F');
+
+  // 入出力
+  el.panelInput.style.display  = (isText||isFile||isB2F)?'block':'none';
+  el.panelOutput.style.display = isB2F ? 'none' : 'block';
+
+  // 入力ウィジェット
+  el.input.style.display       = (isText||isB2F)?'block':'none';
+  el.drop.style.display        = isFile?'block':'none';
+  el.filename.style.display    = isB2F?'block':'none';
+  el.filetypeWrap.style.display= isB2F?'flex':'none';
+
+  // 入力ボタン表示（ペーストは ENC/DEC/B2F のみ）
+  const showPaste = (mode==='ENC'||mode==='DEC'||mode==='B2F');
+  el.btnPaste.parentElement.style.display = showPaste ? 'flex' : 'none';
+
+  el.btnClear.style.display    = isText?'inline-block':'none';
+  el.btnConv.style.display     = isText?'inline-block':'none';
+
+  // 出力ボタン
+  el.btnQR.style.display       = (!isCamMode() && !isB2F) ? 'inline-block' : 'none';
+
+  // 保存ボタン：B2Fのみ表示＆入力側へ移動
+  if (isB2F) {
+    el.btnSave.style.display='inline-block';
+    if (el.btnSave.parentElement!==el.rowIn) el.rowIn.insertBefore(el.btnSave, el.btnClear);
+  } else {
+    if (el.btnSave.parentElement!==el.rowOut) el.rowOut.appendChild(el.btnSave);
+    el.btnSave.style.display='none';
+  }
+
+  // 送受信パネル
+  el.qrSend.style.display      = (!isCamMode() && !isB2F) ? 'block' : 'none';
+  el.qrRecv.style.display      = isCamMode() ? 'block':'none';
+
+  // CAM時は受信を上/左に
+  if (isCamMode() && el.qrRecv.parentElement !== el.textIO) {
+    el.textIO.insertBefore(el.qrRecv, el.panelOutput);
+  }
+
+  // オプション表示
+  el.autoStopWrap.style.display = isTextCamMode() ? 'flex' : 'none';
+  el.gridOpts.style.display     = isMultiMode() ? 'flex' : 'none';
+
+  // プレースホルダ
+  el.output.placeholder =
+    isFile ? 'ここにBase64が表示されます' :
+    (mode==='DEC'||isTextCamMode()) ? 'ここにテキストが表示されます' :
+    'ここに結果が表示されます';
+
+  drawOverlayGrid();
+}
+
+/* ====== Base64ユーティリティ ====== */
+function utf8ToB64(str){
+  if (window.TextEncoder) {
+    const bytes = new TextEncoder().encode(str);
+    let bin=''; for (const b of bytes) bin+=String.fromCharCode(b);
+    return btoa(bin);
+  } else return btoa(unescape(encodeURIComponent(str)));
+}
+function normalizeB64(b64){
+  let s=(b64||'').trim();
+  s=s.replace(/^data:.*;base64,/i,'').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
+  s+='='.repeat((4-(s.length%4))%4);
+  return s;
+}
+function b64ToUtf8(b64){
+  const clean=normalizeB64(b64);
+  if (window.TextDecoder){
+    const bin=atob(clean); const bytes=new Uint8Array(bin.length);
+    for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  } else return decodeURIComponent(escape(atob(clean)));
+}
+
+/* ====== QR送出 ====== */
+const fmtMMSS = x => { const t=Math.max(0,Math.floor(x)); const m=String(Math.floor(t/60)).padStart(2,'0'); const s=String(t%60).padStart(2,'0'); return `${m}:${s}`; };
+const checksum = str => { let s=0; for(let i=0;i<str.length;i++) s=(s+str.charCodeAt(i))&0xffff; return s; };
+const FRAME_RE=/^\[(\d+)\/(\d+)\|(\d+)\]([\s\S]*)$/;
+
+let qrChunks=[], idx=0, playing=false, timer=null, fpsRate=1.0;
+function splitFrames(text, maxPayload){
+  const total=Math.ceil(text.length/maxPayload)||1, frames=[];
+  for(let i=0;i<total;i++){ const p=text.slice(i*maxPayload,(i+1)*maxPayload); frames.push(`[${i+1}/${total}|${checksum(p)}]${p}`); }
+  return frames;
+}
+function splitFramesNoHeader(text,maxPayload){
+  const total=Math.ceil(text.length/maxPayload)||1, frames=[];
+  for(let i=0;i<total;i++){ frames.push(text.slice(i*maxPayload,(i+1)*maxPayload)); }
+  return frames;
+}
+function buildSequence(){
+  const s=el.output?.value.trim();
+  if(!s){ alert('出力が空です'); return false; }
+  if(typeof QRCode==='undefined'){ alert('QRCodeライブラリが読み込まれていません'); return false; }
+
+  const maxPayload=700;
+  const withHeader = !(el.noHdr && el.noHdr.checked);
+  qrChunks = withHeader ? splitFrames(s,maxPayload) : splitFramesNoHeader(s,maxPayload);
+
+  idx=0; el.scrub.max=Math.max(qrChunks.length-1,0); el.scrub.value=0;
+  renderQR(); updateTimeLabels(); updateFrameInd();
+  return true;
+}
+function renderQR(){ el.qrWrap.innerHTML=''; const text=qrChunks[idx]||''; new QRCode(el.qrWrap,{text,width:320,height:320,correctLevel:QRCode.CorrectLevel.M}); }
+function updateTimeLabels(){ const total=qrChunks.length; const dur=total/fpsRate; const cur=(idx+1)/fpsRate; el.elapsed.textContent=fmtMMSS(cur); el.duration.textContent=fmtMMSS(dur); }
+function updateFrameInd(){ el.frameInd.textContent=`${Math.min(idx+1,qrChunks.length)} / ${qrChunks.length}`; }
+function play(){ if(playing||!qrChunks.length) return; playing=true; el.btnPlay.textContent='⏸'; tick(); }
+function pause(){ playing=false; el.btnPlay.textContent='▶'; if(timer){ clearTimeout(timer); timer=null; } }
+function tick(){ if(!playing) return; const interval=Math.max(1,Math.round(1000/fpsRate)); timer=setTimeout(()=>{ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); tick(); } else { pause(); } }, interval); }
+function prev(){ if(idx>0){ idx--; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); } }
+function next(){ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); } }
+
+/* FPS 双方向バインド & クランプ */
+function setFps(val){
+  const min=0.5, max=120;
+  let v=parseFloat(val);
+  if(isNaN(v)) v=1.0;
+  v=Math.min(max, Math.max(min, v));
+  fpsRate=v;
+  if (el.fps) el.fps.value = String(v);
+  if (el.fpsNum) el.fpsNum.value = v.toFixed(1);
+  updateTimeLabels();
+  if (playing){ pause(); play(); }
+}
+
+/* ====== 受信（ヘッダ再構成） ====== */
+const rx = { total:0, got:new Map() };
+const rxTxt = { buffer:'' };
+function appendHeaderedAndMaybeComplete(frame){
+  const m=FRAME_RE.exec(String(frame).trim()); if(!m) return {matched:false};
+  const i=parseInt(m[1],10), total=parseInt(m[2],10), sum=parseInt(m[3],10), payload=m[4];
+  if (checksum(payload)!==sum) { toast('チェックサム不一致',true); return {matched:true,ok:false}; }
+  if (!rx.total) rx.total=total; if (rx.total!==total){ toast('総フレーム数が一致しません',true); return {matched:true,ok:false}; }
+  const already = rx.got.has(i) && rx.got.get(i)===payload;
+  rx.got.set(i,payload);
+  if (el.rxStatus) el.rxStatus.textContent=`${rx.got.size}/${rx.total}`;
+  if (already) return {matched:true,ok:true,complete:false};
+  if (rx.got.size===rx.total){
+    const parts=[]; for(let k=1;k<=rx.total;k++){ const p=rx.got.get(k); if(typeof p!=='string'){ toast(`欠落: ${k}`,true); return {matched:true,ok:false}; } parts.push(p); }
+    const joined=parts.join(''); rx.total=0; rx.got.clear(); if(el.rxStatus) el.rxStatus.textContent='0/0';
+    return {matched:true,ok:true,complete:true,payload:joined};
+  }
+  return {matched:true,ok:true,complete:false};
+}
+function ingestFrameToB64(text){
+  const r=appendHeaderedAndMaybeComplete(text);
+  if(!r.matched){ el.output.value += text; }
+  else if(r.complete){ el.output.value = r.payload; }
+}
+function ingestFrameToText(text){
+  const r=appendHeaderedAndMaybeComplete(text);
+  if(!r.matched){
+    rxTxt.buffer += text;
+    try{ el.output.value = b64ToUtf8(rxTxt.buffer); }catch(_){}
+  }else if(r.complete){
+    try{ el.output.value = b64ToUtf8(r.payload); }catch(e){ toast('テキストに復号できませんでした',true); }
+  }
+}
+function toast(msg,bad=false){
+  const d=document.createElement('div');
+  d.textContent=msg; d.style.cssText=`position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:8px 12px;border-radius:8px;color:#fff;background:${bad?'#e74c3c':'#333'};z-index:9999;opacity:.95;`;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1400);
+}
+
+/* ====== カメラ：単一/複数ROI + ガイド描画 ====== */
+let camStream=null, rafId=null;
+const STABLE_FRAMES = 2;    // ヘッダ無し採用までの安定フレーム数
+const DEDUPE_TTL_MS = 8000; // 同一内容の再採用までの待ち時間
+// 単一用
+const camD = { curr:'', same:0 };
+// 複数用（スロット別）
+const slotState = new Map(); // slot -> {curr, same}
+const seenHashes = new Map(); // contentHash -> lastTs
+
+function fp32(s){ let h=0x811c9dc5|0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24); } return h>>>0; }
+
+async function startScan(){
+  if(typeof jsQR==='undefined'){ alert('jsQRが読み込まれていません（CDNブロック？）'); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ alert('このブラウザはカメラ未対応です'); return; }
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},audio:false});
+    el.cam.srcObject = camStream;
+    await el.cam.play();
+    ensureOverlaySize(); drawOverlayGrid();
+    tickCam();
+  }catch(e){ alert('カメラ起動に失敗: '+e.message); }
+}
+function stopScan(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+function rxClear(){
+  rx.total=0; rx.got.clear(); el.rxStatus.textContent='0/0';
+  rxTxt.buffer=''; el.output.value=''; el.hidLine.value='';
+  camD.curr=''; camD.same=0; slotState.clear(); seenHashes.clear();
+  drawOverlayGrid();
+}
+
+function ensureOverlaySize(){
+  const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;
+  const c=el.camOverlay; c.width=vw; c.height=vh;
+  c.style.width = el.cam.clientWidth+'px';
+  c.style.height= el.cam.clientHeight+'px';
+}
+function drawOverlayGrid(){
+  const ctx=el.camOverlay.getContext('2d');
+  ctx.clearRect(0,0,el.camOverlay.width,el.camOverlay.height);
+  if (!isMultiMode()) return;
+  const rows=Math.max(1,Math.min(6,parseInt(el.rows.value,10)||2));
+  const cols=Math.max(1,Math.min(6,parseInt(el.cols.value,10)||2));
+  const w=el.camOverlay.width, h=el.camOverlay.height;
+  ctx.strokeStyle='rgba(37, 99, 235, 0.9)'; ctx.lineWidth=2;
+  for(let r=1;r<rows;r++){ const y=Math.round(h*r/rows)+.5; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  for(let c=1;c<cols;c++){ const x=Math.round(w*c/cols)+.5; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+}
+// ガイド（検出枠）
+function drawDetections(dets){ // dets: [{corners:[{x,y}*4]}...]
+  const ctx = el.camOverlay.getContext('2d');
+  drawOverlayGrid(); // clearRect含む
+  for (const d of dets){
+    const pts = d.corners;
+    ctx.save();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(16,185,129,0.95)'; // 緑
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 4;
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(16,185,129,0.95)';
+    for (const p of pts){ ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+}
+
+function getSlots(){
+  const vw=el.cam.videoWidth, vh=el.cam.videoHeight;
+  if (!vw||!vh) return [];
+  if (!isMultiMode()){
+    const m=Math.max(0,parseInt(el.roiMargin.value,10)||0);
+    return [{x:m,y:m,w:vw-2*m,h:vh-2*m}];
+  }
+  const rows=Math.max(1,Math.min(6,parseInt(el.rows.value,10)||2));
+  const cols=Math.max(1,Math.min(6,parseInt(el.cols.value,10)||2));
+  const m=Math.max(0,parseInt(el.roiMargin.value,10)||0);
+  const slots=[]; const cellW=Math.floor(vw/cols), cellH=Math.floor(vh/rows);
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const x=c*cellW + m, y=r*cellH + m;
+      const w=(c===cols-1? vw - c*cellW : cellW) - 2*m;
+      const h=(r===rows-1? vh - r*cellH : cellH) - 2*m;
+      if(w>20 && h>20) slots.push({x,y,w,h});
+    }
+  }
+  return slots;
+}
+
+function tickCam(){
+  if(!camStream) return;
+  const v=el.cam, c=el.camCanvas, ctx=c.getContext('2d');
+  const w=v.videoWidth, h=v.videoHeight; if(!w||!h){ rafId=requestAnimationFrame(tickCam); return; }
+  c.width=w; c.height=h;
+
+  const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
+  const dets=[]; // ガイド用
+
+  if (!isMultiMode()){
+    ctx.drawImage(v,0,0,w,h);
+    const img=ctx.getImageData(0,0,w,h);
+    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+
+    if (code && code.location){
+      const L=code.location;
+      dets.push({corners:[L.topLeftCorner, L.topRightCorner, L.bottomRightCorner, L.bottomLeftCorner]});
+    }
+    handleQrResult(code && code.data, null);
+
+  } else {
+    for (let i=0;i<slots.length;i++){
+      const s=slots[i];
+      ctx.drawImage(v, s.x, s.y, s.w, s.h, 0, 0, s.w, s.h);
+      const img=ctx.getImageData(0,0,s.w,s.h);
+      const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+
+      if (code && code.location){
+        const L=code.location, tg=p=>({x:p.x+s.x, y:p.y+s.y});
+        dets.push({corners:[tg(L.topLeftCorner), tg(L.topRightCorner), tg(L.bottomRightCorner), tg(L.bottomLeftCorner)]});
+      }
+      handleQrResult(code && code.data, i);
+    }
+  }
+
+  drawDetections(dets);
+  rafId=requestAnimationFrame(tickCam);
+}
+
+function handleQrResult(str, slot){
+  if(!str) {
+    if (slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; st.curr=''; st.same=0; slotState.set(slot,st); }
+    else { camD.curr=''; camD.same=0; }
+    return;
+  }
+  const m = FRAME_RE.exec(str);
+
+  if (m){
+    const i=parseInt(m[1],10), payload=m[4];
+    const dup = rx.got.has(i) && rx.got.get(i)===payload;
+    if (!dup){ if (isTextCamMode()) ingestFrameToText(str); else ingestFrameToB64(str); }
+    if (slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; st.curr=''; st.same=0; slotState.set(slot,st); }
+    else { camD.curr=''; camD.same=0; }
+    return;
+  }
+
+  // ヘッダ無し：安定判定 + TTL重複排除
+  const nowProc = (currObj) => {
+    if (str===currObj.curr) currObj.same++; else { currObj.curr=str; currObj.same=1; }
+    if (currObj.same>=STABLE_FRAMES){
+      const h=fp32(str), now=Date.now(), last=seenHashes.get(h)||0;
+      if (now-last>DEDUPE_TTL_MS){
+        if (isTextCamMode()){
+          ingestFrameToText(str);
+          if (el.autoStopHL && el.autoStopHL.checked) stopScan();
+        } else ingestFrameToB64(str);
+        seenHashes.set(h,now);
+        currObj.same=0;
+      }
+    }
+  };
+
+  if (slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; nowProc(st); slotState.set(slot,st); }
+  else nowProc(camD);
+}
+
+/* ====== 変換/入出力/イベント ====== */
+function convert(){
+  const s=el.input?.value.trim(); if(!s){ alert('入力が空です'); return; }
+  try{ el.output.value = (mode==='ENC') ? utf8ToB64(s) : b64ToUtf8(s); }
+  catch(e){ alert('変換に失敗: '+e.message+'\n\n※Base64は改行/URL-safe可、data:ヘッダは自動除去'); }
+}
+async function copyOut(){
+  const s=el.output?.value; if(!s) return;
+  try{ await navigator.clipboard.writeText(s); toast('コピーしました'); }
+  catch(_){ const ta=el.output; ta.focus(); ta.select(); const ok=document.execCommand&&document.execCommand('copy'); toast(ok?'コピーしました':'コピー失敗'); window.getSelection().removeAllRanges(); }
+}
+async function pasteIn(){
+  try{
+    const t = await navigator.clipboard.readText();
+    if(!t){ toast('クリップボードが空です', true); return; }
+    el.input.value = t;
+    toast('貼り付けました');
+  }catch(e){ toast('クリップボード読み取りが許可されていません', true); }
+}
+function handleFiles(files){
+  if(!files||!files.length) return;
+  const f=files[0], r=new FileReader();
+  r.onload=e=>{ const b64=(String(e.target.result).split(',')[1]||''); el.output.value=b64; toast(f.name+' をBase64化しました'); };
+  r.readAsDataURL(f);
+}
+function saveFile(){
+  const b64=el.input?.value.trim(); if(!b64){ alert('Base64を入力してください'); return;}
+  const name=(el.filename?.value.trim()||'download'); const ext=el.filetype?.value||'bin';
+  const mime=({pdf:'application/pdf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',png:'image/png',jpg:'image/jpeg',exe:'application/vnd.microsoft.portable-executable',bin:'application/octet-stream'})[ext]||'application/octet-stream';
+  try{
+    const clean=normalizeB64(b64), bin=atob(clean); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    const blob=new Blob([arr],{type:mime}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${name}.${ext}`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }catch(e){ alert('保存に失敗: '+e.message); }
+}
+
+/* イベント */
+on(el.mEnc,'click',()=>setMode('ENC'));
+on(el.mDec,'click',()=>setMode('DEC'));
+on(el.mFile,'click',()=>setMode('FILE'));
+on(el.mB2F,'click',()=>setMode('B2F'));
+on(el.mCamB64,'click',()=>setMode('CAM_B64'));
+on(el.mCamTxt,'click',()=>setMode('CAM_TXT'));
+on(el.mCamB64M,'click',()=>setMode('CAM_B64_MULTI'));
+on(el.mCamTxtM,'click',()=>setMode('CAM_TXT_MULTI'));
+
+on(el.btnConv,'click',convert);
+on(el.input,'keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') convert(); });
+on(el.btnClear,'click',()=>{ el.input.value=''; el.input.focus(); });
+on(el.btnCopy,'click',copyOut);
+on(el.btnPaste,'click',pasteIn);
+
+on(el.btnQR,'click',()=>{ if(buildSequence()){ pause(); renderQR(); } });
+on(el.btnPrev,'click',prev);
+on(el.btnNext,'click',next);
+on(el.btnPlay,'click',()=> playing?pause():play());
+on(el.scrub,'input',()=>{ idx=parseInt(el.scrub.value||'0',10)||0; renderQR(); updateTimeLabels(); updateFrameInd(); });
+
+/* FPS 双方向 */
+on(el.fps,'input',()=> setFps(el.fps.value));
+on(el.fpsNum,'input',()=> setFps(el.fpsNum.value));
+on(el.fpsNum,'change',()=> setFps(el.fpsNum.value)); // IME確定/フォーカスアウト時の保険
+
+on(el.fileBtn,'click',()=>el.fileInput?.click());
+on(el.fileInput,'change',()=>handleFiles(el.fileInput?.files));
+on(el.drop,'dragover',e=>{ e.preventDefault(); });
+on(el.drop,'drop',e=>{ e.preventDefault(); handleFiles(e.dataTransfer?.files); });
+
+on(el.btnSave,'click',saveFile);
+
+// CAM/HID
+on(el.btnScanStart,'click',startScan);
+on(el.btnScanStop,'click',stopScan);
+on(el.btnRxClear,'click',rxClear);
+on(el.hidLine,'keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const line=el.hidLine.value; el.hidLine.value='';
+    if(!line) return;
+    if (isTextCamMode()) ingestFrameToText(line); else ingestFrameToB64(line);
+  }
+});
+on(el.btnHidAppend,'click',()=>{
+  const line=el.hidLine.value; el.hidLine.value='';
+  if(!line) return;
+  if (isTextCamMode()) ingestFrameToText(line); else ingestFrameToB64(line);
+});
+
+// 複数ROI設定変更でオーバーレイ更新
+['change','input'].forEach(ev=>{
+  on(el.rows,ev,drawOverlayGrid);
+  on(el.cols,ev,drawOverlayGrid);
+  on(el.roiMargin,ev,drawOverlayGrid);
+});
+
+// オーバーレイサイズ追従
+el.cam.addEventListener('loadedmetadata', ()=>{ ensureOverlaySize(); drawOverlayGrid(); });
+window.addEventListener('resize', ()=>{ ensureOverlaySize(); drawOverlayGrid(); });
+
+// リップル
+document.addEventListener('click',(e)=>{
+  const b=e.target.closest('button.ripple'); if(!b) return;
+  const rect=b.getBoundingClientRect();
+  const x=((e.clientX-rect.left)/rect.width)*100, y=((e.clientY-rect.top)/rect.height)*100;
+  b.style.setProperty('--ripple-x',x+'%'); b.style.setProperty('--ripple-y',y+'%');
+  b.classList.remove('rippling'); void b.offsetWidth; b.classList.add('rippling');
+  setTimeout(()=>b.classList.remove('rippling'),600);
+});
+
+/* ====== ヘルプ ====== */
+const HELP_MAIL = 'suzuki.yuya.kitasato@gmail.com';
+const help = {
+  modal: document.getElementById('help-modal'),
+  btnOpen: document.getElementById('btn-help'),
+  btnClose: document.getElementById('btn-help-close'),
+  btnPrint: document.getElementById('btn-help-print'),
+  btnCopyMail: document.getElementById('btn-copy-mail'),
+  qrBox: document.getElementById('help-qr'),
+  version: document.getElementById('about-version'),
+  opened: false,
+};
+function openHelp(){
+  if (!help.modal) return;
+  help.modal.classList.add('show');
+  help.modal.setAttribute('aria-hidden','false');
+  help.opened = true;
+  // 連絡先QR（初回のみ生成）
+  if (help.qrBox && !help.qrBox.dataset.ready && typeof QRCode!=='undefined'){
+    help.qrBox.innerHTML='';
+    new QRCode(help.qrBox,{text:HELP_MAIL,width:110,height:110,correctLevel:QRCode.CorrectLevel.M});
+    help.qrBox.dataset.ready='1';
+  }
+  if (help.version){
+    help.version.textContent = `${APP_VERSION}（ビルド: ${APP_BUILD}）`;
+  }
+}
+function closeHelp(){
+  if (!help.modal) return;
+  help.modal.classList.remove('show');
+  help.modal.setAttribute('aria-hidden','true');
+  help.opened = false;
+}
+if (help.btnOpen) help.btnOpen.addEventListener('click', openHelp);
+if (help.btnClose) help.btnClose.addEventListener('click', closeHelp);
+if (help.modal) help.modal.addEventListener('click', (e)=>{ if(e.target===help.modal) closeHelp(); });
+document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && help.opened) closeHelp(); });
+if (help.btnPrint) help.btnPrint.addEventListener('click', ()=> window.print());
+if (help.btnCopyMail) help.btnCopyMail.addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText(HELP_MAIL); toast('コピーしました'); }
+  catch(_){ toast('コピーできませんでした', true); }
+});
+
+/* 初期化 */
+setMode('ENC');
+setFps(el.fps.value); // スライダー初期値を同期
+}); // DOMContentLoaded
+</script>
+</body>
+</html>

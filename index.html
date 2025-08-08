@@ -20,13 +20,16 @@ header h1{margin:0;font-size:16px}
 /* レイアウト */
 .container{padding:12px;display:flex;flex-direction:column;gap:12px}
 
-/* モード切替（選択中＝暗め） */
+/* モード切替（PC:ピル型/Flex） */
 .mode{display:flex;gap:8px;flex-wrap:wrap}
 .seg{display:flex;border:1px solid var(--br);border-radius:999px;overflow:hidden}
 .seg button{padding:8px 14px;border:0;background:#fff;color:#222;cursor:pointer}
 .seg button.sel{background:#e3e6ed;color:#111;font-weight:700;border-color:#888}
 .seg button:not(.sel):hover{background:#f7f9ff}
 .seg button.sel:hover{filter:brightness(0.92)}
+/* ラベル切替のデフォルト（PC:フル表示/ショート非表示） */
+.seg button .short{display:none}
+.seg button .full{display:inline}
 
 /* 2カラム（<900px=1列 / ≥900px=2列） */
 .grid{display:grid;grid-template-columns:1fr;gap:12px}
@@ -36,28 +39,6 @@ header h1{margin:0;font-size:16px}
 textarea{width:100%;min-height:220px;resize:vertical;font-size:16px;line-height:1.5;padding:10px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row.right{justify-content:flex-end}
-/* --- Mobile: タブを横スクロール&改行禁止に --- */
-@media (max-width: 640px) {
-  /* セグメント全体を横スクロール化 */
-  .seg{
-    overflow-x: auto;        /* ← 横だけスクロール */
-    overflow-y: hidden;
-    flex-wrap: nowrap;       /* 折り返さない */
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity; /* スナップで気持ちよく止まる */
-    gap: 0;                  /* すき間なし（ピル形状が崩れない） */
-  }
-  .seg::-webkit-scrollbar{ height: 6px; } /* iOS以外の細スクロールバー */
-
-  /* 各ボタンを1行固定＆横幅は内容ぶんだけ */
-  .seg button{
-    white-space: nowrap;     /* ← ここが超大事：日本語の逐次改行を止める */
-    flex: 0 0 auto;          /* 内容幅のチップ化 */
-    font-size: 14px;         /* 少しコンパクトに */
-    padding: 8px 12px;
-    scroll-snap-align: start;
-  }
-}
 
 /* ボタン/入力 */
 button,select,input[type="text"],input[type="file"],input[type="number"]{font-size:15px;padding:8px 12px;border:1px solid #bbb;border-radius:6px;background:#fff}
@@ -117,6 +98,44 @@ button[data-tip]::after, button[data-tip]::before { display:none !important; }
 .qr-contact{display:flex;gap:12px;align-items:center}
 .qr-cell{width:120px;height:120px;border:1px solid #eee;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
 kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-radius:4px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+
+/* --- Mobile: タブを4列グリッド（4×2） & 短縮ラベル表示 --- */
+@media (max-width:640px){
+  .seg{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* ← 4列固定 */
+    gap:8px;
+    padding:8px;
+    border:1px solid var(--br);
+    border-radius:12px;
+    overflow:visible;
+  }
+  .seg button{
+    flex:initial;
+    width:100%;
+    padding:8px 10px;         /* 少しコンパクトに */
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:13px;           /* 4列用に微調整 */
+    background:#fff;
+    border:1px solid var(--br);
+    border-radius:999px;
+  }
+  .seg button.sel{ background:#e3e6ed; color:#111; font-weight:700; }
+
+  /* ラベル切替（スマホ: ショート=“B64”表記） */
+  .seg button .full{display:none}
+  .seg button .short{display:inline}
+}
+
+/* 画面が極端に狭い端末（例 360px以下）は3列にフォールバック（任意） */
+@media (max-width:360px){
+  .seg{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+}
 </style>
 
 <!-- CDN -->
@@ -126,7 +145,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 <body>
 <header>
   <div class="header-row">
-    <h1>テキストQRコード相互変換ツール</h1>
+    <h1>テキストQRコード変換</h1>
     <div class="header-actions">
       <span id="ver" class="badge" title="バージョン"></span>
       <button id="btn-help" class="pri ripple">ヘルプ</button>
@@ -138,14 +157,30 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   <!-- モード切替 -->
   <div class="mode">
     <div class="seg" role="tablist" aria-label="mode">
-      <button id="m-enc" class="sel" role="tab">テキスト → Base64</button>
-      <button id="m-dec" role="tab">Base64 → テキスト</button>
-      <button id="m-file" role="tab">ファイル → Base64</button>
-      <button id="m-b2f" role="tab">Base64 → ファイル</button>
-      <button id="m-cam" role="tab">QR→Base64</button>
-      <button id="m-camtxt" role="tab">QR→テキスト</button>
-      <button id="m-cam-multi" role="tab">QR（複数）→Base64</button>
-      <button id="m-camtxt-multi" role="tab">QR（複数）→テキスト</button>
+      <button id="m-enc" class="sel" role="tab">
+        <span class="full">テキスト → Base64</span><span class="short">テキスト → B64</span>
+      </button>
+      <button id="m-dec" role="tab">
+        <span class="full">Base64 → テキスト</span><span class="short">B64 → テキスト</span>
+      </button>
+      <button id="m-file" role="tab">
+        <span class="full">ファイル → Base64</span><span class="short">ファイル → B64</span>
+      </button>
+      <button id="m-b2f" role="tab">
+        <span class="full">Base64 → ファイル</span><span class="short">B64 → ファイル</span>
+      </button>
+      <button id="m-cam" role="tab">
+        <span class="full">QR→Base64</span><span class="short">QR→B64</span>
+      </button>
+      <button id="m-camtxt" role="tab">
+        <span class="full">QR→テキスト</span><span class="short">QR→テキスト</span>
+      </button>
+      <button id="m-cam-multi" role="tab">
+        <span class="full">QR（複数）→Base64</span><span class="short">QR（複）→B64</span>
+      </button>
+      <button id="m-camtxt-multi" role="tab">
+        <span class="full">QR（複数）→テキスト</span><span class="short">QR（複）→テキスト</span>
+      </button>
     </div>
   </div>
 
@@ -179,13 +214,13 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
       <div class="row">
         <button id="btn-paste" class="ripple">クリップボードから貼り付け</button>
-        <span class="muted">※ テキスト→Base64 / Base64→テキスト / Base64→ファイル で表示</span>
+        <span class="muted">※ テキスト↔B64 / B64→ファイル で表示</span>
       </div>
 
       <div class="row right">
         <button id="btn-convert" class="ok ripple">変換（Ctrl+Enter）</button>
         <button id="btn-clear" class="err ripple">クリア</button>
-        <!-- B2Fのとき ここへ「保存」ボタンを移動 -->
+        <!-- B2F時にここへ「保存」ボタンが移動 -->
       </div>
     </section>
 
@@ -224,7 +259,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
         <label class="nohdr">
           <input id="no-header" type="checkbox" checked>
-          ヘッダなし（EMR向け）
+          ヘッダなし（電子カルテ向け）
         </label>
       </div>
     </div>
@@ -238,7 +273,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <button id="btn-scan-start" class="pri ripple">カメラ開始</button>
         <button id="btn-scan-stop" class="ripple">停止</button>
         <button id="btn-rx-clear" class="err ripple">受信クリア</button>
-        <span class="muted">※HTTPS/localhostで動作。ヘッダ有れば順序復元します。</span>
       </div>
 
       <!-- QR→テキスト系だけ表示：ヘッダ無し1枚で自動停止 -->
@@ -254,7 +288,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
         <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
         <label>ROI余白(px): <input id="roi-margin" type="number" min="0" max="80" value="16"></label>
-        <span class="muted">電子カルテPC側のタイル数に合わせてください（例: 2×2）。</span>
+        <span class="muted">電子カルテ側で設定したマスの数に合わせてください（例: 2×2）。</span>
       </div>
 
       <div class="video-box">
@@ -287,10 +321,10 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
     <div class="content">
       <div class="sec">
         <h3>概要</h3>
-      <ul>
-<li>医局のバーコードリーダーDS9308を使ってカルテに情報を送り込めるプログラムです。</li>
+        <ul>
+<li>医局のバーコードリーダーDS9308を使ってカルテに情報を送り込めるプログラムです。患者情報に気をつけて使いましょう。JOSLERにも便利かも</li>
 <li>①テキスト/ファイルをBase64という文字列の変換を介して<b>QRコード化</b>します。</li>
-<li>②QRコードをカルテに繋いだバーコードリーダーDS9308にかざしましょう。</li>
+<li>②QRコードをカルテに繋いだ<b>バーコードリーダーDS9308</b>にかざしましょう。</li>
 <li>③入力したテキストは共有フォルダ＞2024年度S2＞鈴木＞プログラム＞B64decoderで読み込んだBase64を文字列あるいはファイルに変換しましょう。</li>
         </ul>
       </div>
@@ -298,20 +332,11 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <div class="sec">
         <h3>モード</h3>
         <ul>
-          <li><b>テキスト ↔ Base64</b>：相互変換。<kbd>Ctrl</kbd>+<kbd>Enter</kbd>で変換。</li>
-          <li><b>ファイル → Base64</b>：ドラッグ&ドロップでBase64化。</li>
-          <li><b>Base64 → ファイル</b>：入力のBase64を「名前を付けて保存」で復元。</li>
-          <li><b>QR→Base64 / QR→テキスト</b>：単一QRを連続受信。検出枠ガイド表示。</li>
-          <li><b>QR（複数）→Base64 / QR（複数）→テキスト</b>：映像をグリッド分割して複数同時読み取り。</li>
-        </ul>
-      </div>
-
-      <div class="sec">
-        <h3>連続QR送出</h3>
-        <ul>
-          <li><b>QR表示（連続）</b>で最大約700文字/枚に分割して送出します。</li>
-          <li>FPSは<b>0.5〜120</b>。スライダーまたは数値ボックスで指定可能。</li>
-          <li><b>ヘッダなし（電子カルテ向け）</b>／<b>ヘッダあり</b>（順序復元＆整合性チェック）。</li>
+          <li><b>テキスト →B64</b>：カルテに入れたい文字列をBase64に暗号化します。<kbd>Ctrl</kbd>+<kbd>Enter</kbd>で変換。</li>
+          <li><b>ファイル → B64</b>：ドラッグ&ドロップでBase64化、QRコードにしてカルテに入力できます。</li>
+          <li><b>B64 → ファイル</b>：カルテから入力したBase64をファイルとして復元できます。</li>
+          <li><b>QR→B64 / QR→テキスト</b>：QRコードを受信します単一QRを連続受信。検出枠ガイド表示。</li>
+          <li><b>QR（複数）→B64 / QR（複数）→テキスト</b>：映像をグリッド分割して複数同時読み取り。早いが上級者向け</li>
         </ul>
       </div>
 
@@ -334,7 +359,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <div class="sec muted">© S2 Yuya Suzuki, Okazaki Medical Center</div>
+      <div class="sec muted">© Yuya Suzuki, Okazaki Medical Center</div>
     </div>
   </div>
 </div>
@@ -343,11 +368,11 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 /* ====== バージョン情報 ====== */
-const APP_VERSION = 'v2025.08.09-fps120';
+const APP_VERSION = 'v2025.08.09-fps120-mobileB64';
 const APP_BUILD   = '2025-08-09';
 document.getElementById('ver').textContent = APP_VERSION;
 
-/* ====== 要素取得 & ユーティリティ ====== */
+/* ====== 要素取得 ====== */
 const $ = id => document.getElementById(id);
 const on = (node, ev, fn) => { if (node) node.addEventListener(ev, fn, false); };
 
@@ -382,7 +407,7 @@ const el = {
 el.rowIn = document.querySelector('#panel-input .row.right');
 
 /* ====== モード ====== */
-let mode = 'ENC'; // ENC, DEC, FILE, B2F, CAM_B64, CAM_TXT, CAM_B64_MULTI, CAM_TXT_MULTI
+let mode = 'ENC';
 const tabState = {
   ENC:{in:'',out:''}, DEC:{in:'',out:''}, FILE:{in:'',out:''}, B2F:{in:'',out:''},
   CAM_B64:{in:'',out:''}, CAM_TXT:{in:'',out:''}, CAM_B64_MULTI:{in:'',out:''}, CAM_TXT_MULTI:{in:'',out:''}
@@ -406,27 +431,27 @@ function setMode(to){
   const isFile=(mode==='FILE');
   const isB2F =(mode==='B2F');
 
-  // 入出力
+  // 入出力可視
   el.panelInput.style.display  = (isText||isFile||isB2F)?'block':'none';
   el.panelOutput.style.display = isB2F ? 'none' : 'block';
 
-  // 入力ウィジェット
+  // 入力系
   el.input.style.display       = (isText||isB2F)?'block':'none';
   el.drop.style.display        = isFile?'block':'none';
   el.filename.style.display    = isB2F?'block':'none';
   el.filetypeWrap.style.display= isB2F?'flex':'none';
 
-  // 入力ボタン表示（ペーストは ENC/DEC/B2F のみ）
+  // 入力ボタン
   const showPaste = (mode==='ENC'||mode==='DEC'||mode==='B2F');
   el.btnPaste.parentElement.style.display = showPaste ? 'flex' : 'none';
 
   el.btnClear.style.display    = isText?'inline-block':'none';
   el.btnConv.style.display     = isText?'inline-block':'none';
 
-  // 出力ボタン
+  // 出力側
   el.btnQR.style.display       = (!isCamMode() && !isB2F) ? 'inline-block' : 'none';
 
-  // 保存ボタン：B2Fのみ表示＆入力側へ移動
+  // B2F保存ボタンの移動/表示
   if (isB2F) {
     el.btnSave.style.display='inline-block';
     if (el.btnSave.parentElement!==el.rowIn) el.rowIn.insertBefore(el.btnSave, el.btnClear);
@@ -438,17 +463,13 @@ function setMode(to){
   // 送受信パネル
   el.qrSend.style.display      = (!isCamMode() && !isB2F) ? 'block' : 'none';
   el.qrRecv.style.display      = isCamMode() ? 'block':'none';
+  if (isCamMode() && el.qrRecv.parentElement !== el.textIO) el.textIO.insertBefore(el.qrRecv, el.panelOutput);
 
-  // CAM時は受信を上/左に
-  if (isCamMode() && el.qrRecv.parentElement !== el.textIO) {
-    el.textIO.insertBefore(el.qrRecv, el.panelOutput);
-  }
-
-  // オプション表示
+  // オプション
   el.autoStopWrap.style.display = isTextCamMode() ? 'flex' : 'none';
   el.gridOpts.style.display     = isMultiMode() ? 'flex' : 'none';
 
-  // プレースホルダ
+  // placeholder
   el.output.placeholder =
     isFile ? 'ここにBase64が表示されます' :
     (mode==='DEC'||isTextCamMode()) ? 'ここにテキストが表示されます' :
@@ -518,11 +539,10 @@ function tick(){ if(!playing) return; const interval=Math.max(1,Math.round(1000/
 function prev(){ if(idx>0){ idx--; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); } }
 function next(){ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); } }
 
-/* FPS 双方向バインド & クランプ */
+/* FPS 双方向バインド */
 function setFps(val){
   const min=0.5, max=120;
-  let v=parseFloat(val);
-  if(isNaN(v)) v=1.0;
+  let v=parseFloat(val); if(isNaN(v)) v=1.0;
   v=Math.min(max, Math.max(min, v));
   fpsRate=v;
   if (el.fps) el.fps.value = String(v);
@@ -531,7 +551,7 @@ function setFps(val){
   if (playing){ pause(); play(); }
 }
 
-/* ====== 受信（ヘッダ再構成） ====== */
+/* ====== 受信（ヘッダ再構成/重複排除） ====== */
 const rx = { total:0, got:new Map() };
 const rxTxt = { buffer:'' };
 function appendHeaderedAndMaybeComplete(frame){
@@ -572,14 +592,11 @@ function toast(msg,bad=false){
 
 /* ====== カメラ：単一/複数ROI + ガイド描画 ====== */
 let camStream=null, rafId=null;
-const STABLE_FRAMES = 2;    // ヘッダ無し採用までの安定フレーム数
-const DEDUPE_TTL_MS = 8000; // 同一内容の再採用までの待ち時間
-// 単一用
-const camD = { curr:'', same:0 };
-// 複数用（スロット別）
-const slotState = new Map(); // slot -> {curr, same}
-const seenHashes = new Map(); // contentHash -> lastTs
-
+const STABLE_FRAMES = 2;
+const DEDUPE_TTL_MS = 8000;
+const camD = { curr:'', same:0 };             // 単一用
+const slotState = new Map();                   // 複数用
+const seenHashes = new Map();                  // TTL重複排除
 function fp32(s){ let h=0x811c9dc5|0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24); } return h>>>0; }
 
 async function startScan(){
@@ -600,7 +617,6 @@ function rxClear(){
   camD.curr=''; camD.same=0; slotState.clear(); seenHashes.clear();
   drawOverlayGrid();
 }
-
 function ensureOverlaySize(){
   const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;
   const c=el.camOverlay; c.width=vw; c.height=vh;
@@ -618,15 +634,14 @@ function drawOverlayGrid(){
   for(let r=1;r<rows;r++){ const y=Math.round(h*r/rows)+.5; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
   for(let c=1;c<cols;c++){ const x=Math.round(w*c/cols)+.5; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
 }
-// ガイド（検出枠）
-function drawDetections(dets){ // dets: [{corners:[{x,y}*4]}...]
+function drawDetections(dets){
   const ctx = el.camOverlay.getContext('2d');
-  drawOverlayGrid(); // clearRect含む
+  drawOverlayGrid();
   for (const d of dets){
     const pts = d.corners;
     ctx.save();
     ctx.lineWidth = 4;
-    ctx.strokeStyle = 'rgba(16,185,129,0.95)'; // 緑
+    ctx.strokeStyle = 'rgba(16,185,129,0.95)';
     ctx.shadowColor = 'rgba(0,0,0,0.45)';
     ctx.shadowBlur = 4;
 
@@ -641,7 +656,6 @@ function drawDetections(dets){ // dets: [{corners:[{x,y}*4]}...]
     ctx.restore();
   }
 }
-
 function getSlots(){
   const vw=el.cam.videoWidth, vh=el.cam.videoHeight;
   if (!vw||!vh) return [];
@@ -663,7 +677,6 @@ function getSlots(){
   }
   return slots;
 }
-
 function tickCam(){
   if(!camStream) return;
   const v=el.cam, c=el.camCanvas, ctx=c.getContext('2d');
@@ -671,19 +684,17 @@ function tickCam(){
   c.width=w; c.height=h;
 
   const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
-  const dets=[]; // ガイド用
+  const dets=[];
 
   if (!isMultiMode()){
     ctx.drawImage(v,0,0,w,h);
     const img=ctx.getImageData(0,0,w,h);
     const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
-
     if (code && code.location){
       const L=code.location;
       dets.push({corners:[L.topLeftCorner, L.topRightCorner, L.bottomRightCorner, L.bottomLeftCorner]});
     }
     handleQrResult(code && code.data, null);
-
   } else {
     for (let i=0;i<slots.length;i++){
       const s=slots[i];
@@ -702,7 +713,6 @@ function tickCam(){
   drawDetections(dets);
   rafId=requestAnimationFrame(tickCam);
 }
-
 function handleQrResult(str, slot){
   if(!str) {
     if (slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; st.curr=''; st.same=0; slotState.set(slot,st); }
@@ -735,7 +745,6 @@ function handleQrResult(str, slot){
       }
     }
   };
-
   if (slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; nowProc(st); slotState.set(slot,st); }
   else nowProc(camD);
 }
@@ -799,10 +808,9 @@ on(el.btnNext,'click',next);
 on(el.btnPlay,'click',()=> playing?pause():play());
 on(el.scrub,'input',()=>{ idx=parseInt(el.scrub.value||'0',10)||0; renderQR(); updateTimeLabels(); updateFrameInd(); });
 
-/* FPS 双方向 */
 on(el.fps,'input',()=> setFps(el.fps.value));
 on(el.fpsNum,'input',()=> setFps(el.fpsNum.value));
-on(el.fpsNum,'change',()=> setFps(el.fpsNum.value)); // IME確定/フォーカスアウト時の保険
+on(el.fpsNum,'change',()=> setFps(el.fpsNum.value));
 
 on(el.fileBtn,'click',()=>el.fileInput?.click());
 on(el.fileInput,'change',()=>handleFiles(el.fileInput?.files));
@@ -867,15 +875,12 @@ function openHelp(){
   help.modal.classList.add('show');
   help.modal.setAttribute('aria-hidden','false');
   help.opened = true;
-  // 連絡先QR（初回のみ生成）
   if (help.qrBox && !help.qrBox.dataset.ready && typeof QRCode!=='undefined'){
     help.qrBox.innerHTML='';
     new QRCode(help.qrBox,{text:HELP_MAIL,width:110,height:110,correctLevel:QRCode.CorrectLevel.M});
     help.qrBox.dataset.ready='1';
   }
-  if (help.version){
-    help.version.textContent = `${APP_VERSION}（ビルド: ${APP_BUILD}）`;
-  }
+  if (help.version){ help.version.textContent = `${APP_VERSION}（ビルド: ${APP_BUILD}）`; }
 }
 function closeHelp(){
   if (!help.modal) return;
@@ -895,9 +900,8 @@ if (help.btnCopyMail) help.btnCopyMail.addEventListener('click', async ()=>{
 
 /* 初期化 */
 setMode('ENC');
-setFps(el.fps.value); // スライダー初期値を同期
+setFps(el.fps.value);
 }); // DOMContentLoaded
 </script>
 </body>
 </html>
-

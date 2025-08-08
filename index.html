@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>QR B64ブリッジ</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0">
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
 <style>
 :root{--fg:#222;--bg:#fff;--muted:#666;--pri:#2d7ef7;--ok:#27ae60;--err:#e74c3c;--br:#ddd;}
 html,body{height:100%}
@@ -141,6 +146,25 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 }
 
 }
+/* 合体アイコン用 */
+.material-symbols-outlined{
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.icon-stack{
+  --size:28px; --fg:#1f1f1f; --acc:#2d7ef7;
+  position:relative; display:inline-block; width:var(--size); height:var(--size); vertical-align:middle;
+}
+.icon-stack .ms,.icon-stack .mi{
+  position:absolute; inset:0; display:inline-flex; align-items:center; justify-content:center; line-height:1;
+  color:var(--fg); font-size:var(--size);
+}
+.icon-stack .mi{
+  color:var(--acc); font-size:calc(var(--size)*0.58); right:-2px; bottom:-2px; transform:translate(10%,10%);
+}
+@media (prefers-color-scheme: dark){
+  .icon-stack{ --fg:#e8eaed; --acc:#8ab4f8; }
+}
+
 </style>
 
 <!-- CDN -->
@@ -150,7 +174,13 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 <body>
 <header>
   <div class="header-row">
-    <h1>テキストQRコード変換</h1>
+    <h1>   
+      <span class="icon-stack" aria-label="QR+テキスト">
+        <span class="material-symbols-outlined ms" aria-hidden="true">qr_code_2</span>
+        <span class="material-icons mi" aria-hidden="true">text_snippet</span>
+      </span>
+      テキストQRコード変換
+　　</h1>
     <div class="header-actions">
       <span id="ver" class="badge" title="バージョン"></span>
       <button id="btn-help" class="pri ripple">ヘルプ</button>
@@ -919,4 +949,5 @@ setFps(el.fps.value);
 </script>
 </body>
 </html>
+
 

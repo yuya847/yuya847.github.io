@@ -6,9 +6,7 @@
 <title>QR B64ブリッジ</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0">
-<link rel="stylesheet"
-  href="https://fonts.googleapis.com/icon?family=Material+Icons">
+href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0&icon_names=qr_code_2,text_snippet&display=swap">
 
 <style>
 :root{--fg:#222;--bg:#fff;--muted:#666;--pri:#2d7ef7;--ok:#27ae60;--err:#e74c3c;--br:#ddd;}
@@ -148,19 +146,24 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 }
 /* 合体アイコン用 */
 .material-symbols-outlined{
-  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+  font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;
 }
 .icon-stack{
   --size:28px; --fg:#1f1f1f; --acc:#2d7ef7;
-  position:relative; display:inline-block; width:var(--size); height:var(--size); vertical-align:middle;
+  position:relative; display:inline-block; width:var(--size); height:var(--size);
 }
-.icon-stack .ms,.icon-stack .mi{
-  position:absolute; inset:0; display:inline-flex; align-items:center; justify-content:center; line-height:1;
-  color:var(--fg); font-size:var(--size);
+.icon-stack .base, .icon-stack .acc{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:var(--size); line-height:1; color:var(--fg);
 }
-.icon-stack .mi{
-  color:var(--acc); font-size:calc(var(--size)*0.58); right:-2px; bottom:-2px; transform:translate(10%,10%);
+/* 右下に小さく重ねる。必要ならFILL=1で塗りつぶしに */
+.icon-stack .acc{
+  color:var(--acc);
+  font-size:calc(var(--size)*0.58);
+  right:-2px; bottom:-2px; transform:translate(10%,10%);
+  font-variation-settings:'FILL' 1,'wght' 600,'GRAD' 0,'opsz' 24;
 }
+
 @media (prefers-color-scheme: dark){
   .icon-stack{ --fg:#e8eaed; --acc:#8ab4f8; }
 }
@@ -175,10 +178,10 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 <header>
   <div class="header-row">
     <h1>   
-      <span class="icon-stack" aria-label="QR+テキスト">
-        <span class="material-symbols-outlined ms" aria-hidden="true">qr_code_2</span>
-        <span class="material-icons mi" aria-hidden="true">text_snippet</span>
-      </span>
+<span class="icon-stack" aria-label="QR + テキスト">
+  <span class="material-symbols-outlined base" aria-hidden="true">qr_code_2</span>
+  <span class="material-symbols-outlined acc"  aria-hidden="true">text_snippet</span>
+</span>
       テキストQRコード変換
 　　</h1>
     <div class="header-actions">
@@ -949,5 +952,6 @@ setFps(el.fps.value);
 </script>
 </body>
 </html>
+
 
 

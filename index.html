@@ -36,6 +36,28 @@ header h1{margin:0;font-size:16px}
 textarea{width:100%;min-height:220px;resize:vertical;font-size:16px;line-height:1.5;padding:10px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row.right{justify-content:flex-end}
+/* --- Mobile: タブを横スクロール&改行禁止に --- */
+@media (max-width: 640px) {
+  /* セグメント全体を横スクロール化 */
+  .seg{
+    overflow-x: auto;        /* ← 横だけスクロール */
+    overflow-y: hidden;
+    flex-wrap: nowrap;       /* 折り返さない */
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity; /* スナップで気持ちよく止まる */
+    gap: 0;                  /* すき間なし（ピル形状が崩れない） */
+  }
+  .seg::-webkit-scrollbar{ height: 6px; } /* iOS以外の細スクロールバー */
+
+  /* 各ボタンを1行固定＆横幅は内容ぶんだけ */
+  .seg button{
+    white-space: nowrap;     /* ← ここが超大事：日本語の逐次改行を止める */
+    flex: 0 0 auto;          /* 内容幅のチップ化 */
+    font-size: 14px;         /* 少しコンパクトに */
+    padding: 8px 12px;
+    scroll-snap-align: start;
+  }
+}
 
 /* ボタン/入力 */
 button,select,input[type="text"],input[type="file"],input[type="number"]{font-size:15px;padding:8px 12px;border:1px solid #bbb;border-radius:6px;background:#fff}
@@ -104,7 +126,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 <body>
 <header>
   <div class="header-row">
-    <h1>テキスト/ファイル ⇄ Base64 & 連続QRブリッジ</h1>
+    <h1>テキストQRコード相互変換ツール</h1>
     <div class="header-actions">
       <span id="ver" class="badge" title="バージョン"></span>
       <button id="btn-help" class="pri ripple">ヘルプ</button>
@@ -232,7 +254,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
         <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
         <label>ROI余白(px): <input id="roi-margin" type="number" min="0" max="80" value="16"></label>
-        <span class="muted">HTA側のタイル数に合わせてください（例: 2×2）。</span>
+        <span class="muted">電子カルテPC側のタイル数に合わせてください（例: 2×2）。</span>
       </div>
 
       <div class="video-box">
@@ -268,9 +290,8 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <ul>
 <li>医局のバーコードリーダーDS9308を使ってカルテに情報を送り込めるプログラムです。</li>
 <li>①テキスト/ファイルをBase64という文字列の変換を介して<b>QRコード化</b>します。</li>
-<li>②QRコードをカルテに繋いだバーコードリーダーにかざしましょう。入力したテキストは共有フォルダの鈴木のプログラムにある変換プログラムでBase64を文字列あるいはファイルに変換しましょう。</li>
-
-          <li>QRコードからカルテ内のファイル、データの受信も可能です。</li>
+<li>②QRコードをカルテに繋いだバーコードリーダーDS9308にかざしましょう。</li>
+<li>③入力したテキストは共有フォルダ＞2024年度S2＞鈴木＞プログラム＞B64decoderで読み込んだBase64を文字列あるいはファイルに変換しましょう。</li>
         </ul>
       </div>
 
@@ -290,7 +311,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <ul>
           <li><b>QR表示（連続）</b>で最大約700文字/枚に分割して送出します。</li>
           <li>FPSは<b>0.5〜120</b>。スライダーまたは数値ボックスで指定可能。</li>
-          <li><b>ヘッダなし（EMR向け）</b>／<b>ヘッダあり</b>（順序復元＆整合性チェック）。</li>
+          <li><b>ヘッダなし（電子カルテ向け）</b>／<b>ヘッダあり</b>（順序復元＆整合性チェック）。</li>
         </ul>
       </div>
 
@@ -879,3 +900,4 @@ setFps(el.fps.value); // スライダー初期値を同期
 </script>
 </body>
 </html>
+

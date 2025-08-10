@@ -253,15 +253,28 @@ button:not(:disabled):focus-visible,
 #log-panel{
   position:fixed; right:12px; bottom:12px;
   width:min(360px,92vw); max-height:44vh; overflow:auto;
-  border:1px solid var(--br); border-radius:10px; padding:10px;
+  border:1px solid var(--br); border-radius:10px; padding:10px 10px 10px 10px;
   background:#fff; box-shadow:0 10px 24px rgba(0,0,0,.18);
   display:none; z-index:9998;
 }
-#log-panel h3{ margin:0 0 6px; font-size:13px; }
+#log-panel h3{ margin:0 0 6px; font-size:13px; padding-right:24px; }
 #log-panel pre{
   margin:0; font-size:12px; line-height:1.35; white-space:pre-wrap;
   font-family:ui-monospace,Menlo,Consolas,monospace;
 }
+/* ==== 簡易ログ：閉じる（✕）ボタン ==== */
+.log-close-btn{
+  position:absolute; top:6px; right:6px;
+  width:22px; height:22px;
+  border:1px solid var(--br);
+  border-radius:999px;
+  background:#f3f4f6; color:#333;
+  cursor:pointer; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; padding:0;
+}
+.log-close-btn:hover{ filter:brightness(.96); }
+.log-close-btn:active{ transform:scale(.96); }
 </style>
 
 <!-- QR & Scanner -->
@@ -276,7 +289,7 @@ button:not(:disabled):focus-visible,
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.53</span>
+      <span id="ver" class="badge">ver 1.6</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -517,8 +530,9 @@ button:not(:disabled):focus-visible,
   </div>
 </div>
 
-<!-- 簡易ログパネル -->
+<!-- 簡易ログパネル（✕ 追加） -->
 <div id="log-panel" aria-live="polite" aria-hidden="true">
+  <button id="log-close" class="log-close-btn" aria-label="簡易ログを閉じる">×</button>
   <h3>簡易ログ</h3>
   <pre id="log-pre"></pre>
 </div>
@@ -618,7 +632,7 @@ const el = {
   // help
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
   // logs
-  logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre')
+  logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close')
 };
 
 /* ====== 吹き出しショートカット（ボタンに追記） ====== */
@@ -638,6 +652,7 @@ let detCache = [];                         // {corners:[{x,y}×4], ts:number}
 const DET_HOLD_MS = 180;                   // 検出枠を短時間残す
 const USE_WORKERS = true;                  // 無効化したい場合は false
 const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化（true推奨）
+let dispatchCursor = 0;                    // ★ 巡回開始インデックス
 
 function makeWorkerURL(){
   const src = `
@@ -696,6 +711,7 @@ function teardownWorkers(){
   WORKERS.length = 0; IDLE.length = 0; inFlightSlots.clear();
   if(WORKER_URL){ URL.revokeObjectURL(WORKER_URL); WORKER_URL=''; }
   detCache.length = 0;
+  dispatchCursor = 0;                   // ★ 巡回位置をリセット
 }
 
 function handleWorkerMsg(idx, msg){
@@ -726,18 +742,45 @@ function handleWorkerMsg(idx, msg){
 
 async function dispatchSlots(slots){
   if(!WORKERS.length) return;
-  for(let i=0;i<slots.length;i++){
-    if(!IDLE.length || inFlightSlots.has(i)) continue;
+  const n = slots.length;
+  if(n === 0) return;
+
+  // 巡回開始位置を有効範囲に
+  if(dispatchCursor >= n) dispatchCursor = dispatchCursor % n;
+
+  // 空きワーカーがある限り、巡回しながら割り当て
+  let assigned = 0;
+  for(let step=0; step<n && IDLE.length; step++){
+    const i = (dispatchCursor + step) % n;
+    if(inFlightSlots.has(i)) continue;
+
     const s = slots[i];
+
+    // 念のため境界クランプ（Safariの切り出し境界バグ対策）
+    const vw = el.cam.videoWidth || 0, vh = el.cam.videoHeight || 0;
+    let sx = Math.max(0, Math.min(s.x, vw-1));
+    let sy = Math.max(0, Math.min(s.y, vh-1));
+    let sw = Math.max(1, Math.min(s.w, vw - sx));
+    let sh = Math.max(1, Math.min(s.h, vh - sy));
+    if(sw < 4 || sh < 4){ continue; } // 極端に小さい領域はスキップ
+
     inFlightSlots.add(i);
     const idx = IDLE.pop();
     try{
-      const bmp = await createImageBitmap(el.cam, s.x,s.y,s.w,s.h);
-      WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:s.x, oy:s.y }, [bmp]); // 転送（コピーなし）
+      const bmp = await createImageBitmap(el.cam, sx, sy, sw, sh);
+      WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:sx, oy:sy }, [bmp]);
+      assigned++;
+      // 割り当てに成功したら巡回位置を次に進める
+      dispatchCursor = (i + 1) % n;
     }catch(_){
       inFlightSlots.delete(i);
       IDLE.push(idx);
     }
+  }
+
+  // 割り当てが1つも無かった場合も、少しずつ進めて“いつかは回ってくる”ように
+  if(assigned === 0){
+    dispatchCursor = (dispatchCursor + 1) % n;
   }
 }
 
@@ -1281,6 +1324,13 @@ on(el.logToggle,'change', ()=>{
   el.logPanel.style.display = el.logToggle.checked ? 'block' : 'none';
   el.logPanel.setAttribute('aria-hidden', el.logToggle.checked ? 'false':'true');
   updateLog();
+});
+
+/* ✕ボタン：簡易ログを閉じる（トグルもOFFに） */
+on(el.logClose,'click', ()=>{
+  if(el.logToggle){ el.logToggle.checked = false; }
+  el.logPanel.style.display = 'none';
+  el.logPanel.setAttribute('aria-hidden','true');
 });
 
 function openHelp(){

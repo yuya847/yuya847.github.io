@@ -244,6 +244,24 @@ button:not(:disabled):focus-visible,
   filter: brightness(1.05);
   box-shadow: 0 2px 8px rgb(0 0 0 / .12);
 }
+
+/* ==== 簡易ログ（目立たないトグル＋浮遊パネル） ==== */
+#dev-opts{ align-self:flex-end; font-size:11px; opacity:.35; }
+#dev-opts label{ cursor:pointer; user-select:none; }
+#dev-opts input{ vertical-align:middle }
+#dev-opts:hover{ opacity:.7 }
+#log-panel{
+  position:fixed; right:12px; bottom:12px;
+  width:min(360px,92vw); max-height:44vh; overflow:auto;
+  border:1px solid var(--br); border-radius:10px; padding:10px;
+  background:#fff; box-shadow:0 10px 24px rgba(0,0,0,.18);
+  display:none; z-index:9998;
+}
+#log-panel h3{ margin:0 0 6px; font-size:13px; }
+#log-panel pre{
+  margin:0; font-size:12px; line-height:1.35; white-space:pre-wrap;
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+}
 </style>
 
 <!-- QR & Scanner -->
@@ -390,10 +408,10 @@ button:not(:disabled):focus-visible,
           </button>
         </div>
         <div class="row">
-          <button id="btn-convert" class="icon-btn btn-tonal" data-tip="変換">
+          <button id="btn-convert" class="icon-btn btn-tonal" data-tip="変換 (Ctrl+Enter)">
             <span class="material-symbols-outlined">convert_to_text</span>
           </button>
-          <button id="btn-convert-qr" class="icon-btn btn-sec" data-tip="変換＋QR">
+          <button id="btn-convert-qr" class="icon-btn btn-sec" data-tip="変換＋QR (Shift+Enter)">
             <span class="material-symbols-outlined">qr_code_2</span>
           </button>
         </div>
@@ -493,6 +511,16 @@ button:not(:disabled):focus-visible,
     </div>
   </section>
 
+  <!-- 目立たない簡易ログトグル -->
+  <div id="dev-opts" class="muted">
+    <label><input id="toggle-logs" type="checkbox"> 簡易ログ</label>
+  </div>
+</div>
+
+<!-- 簡易ログパネル -->
+<div id="log-panel" aria-live="polite" aria-hidden="true">
+  <h3>簡易ログ</h3>
+  <pre id="log-pre"></pre>
 </div>
 
 <!-- Help Modal -->
@@ -550,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.53', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.6', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -588,15 +616,169 @@ const el = {
   gridOpts:$('grid-opts'), rows:$('rows'), cols:$('cols'), roiMargin:$('roi-margin'),
   rxStatus:$('rx-status'),
   // help
-  helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
+  helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
+  // logs
+  logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre')
 };
 
-/* ====== 吹き出しにショートカット表記を付与 ====== */
+/* ====== 吹き出しショートカット（ボタンに追記） ====== */
 function applyShortcutTips(){
   if(el.btnConvert)   el.btnConvert.setAttribute('data-tip','変換 (Ctrl+Enter)');
   if(el.btnConvertQR) el.btnConvertQR.setAttribute('data-tip','変換＋QR (Shift+Enter)');
 }
 applyShortcutTips();
+
+/* ====== Worker Pool (ImageBitmap) ====== */
+/* 並列デコード: createImageBitmap を転送し、Worker内 OffscreenCanvas で jsQR を実行 */
+let WORKERS = [];
+let WORKER_URL = '';
+let IDLE = [];
+let inFlightSlots = new Set();
+let detCache = [];                         // {corners:[{x,y}×4], ts:number}
+const DET_HOLD_MS = 180;                   // 検出枠を短時間残す
+const USE_WORKERS = true;                  // 無効化したい場合は false
+const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化（true推奨）
+
+function makeWorkerURL(){
+  const src = `
+'use strict';
+importScripts('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+let canv = new OffscreenCanvas(1,1);
+let ctx = canv.getContext('2d', { willReadFrequently: true });
+
+onmessage = async (e) => {
+  const { bitmap, slot, ox, oy } = e.data;
+  try{
+    canv.width = bitmap.width; canv.height = bitmap.height;
+    ctx.clearRect(0,0,canv.width,canv.height);
+    ctx.drawImage(bitmap, 0, 0);
+    const img = ctx.getImageData(0,0,canv.width,canv.height);
+    const t0 = performance.now();
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+    const t1 = performance.now();
+    const loc = code?.location ? {
+      tl:{x:code.location.topLeftCorner.x,    y:code.location.topLeftCorner.y},
+      tr:{x:code.location.topRightCorner.x,   y:code.location.topRightCorner.y},
+      br:{x:code.location.bottomRightCorner.x,y:code.location.bottomRightCorner.y},
+      bl:{x:code.location.bottomLeftCorner.x, y:code.location.bottomLeftCorner.y}
+    } : null;
+    postMessage({ slot, ok:!!code, data: code?.data || null, time: t1-t0, loc, ox, oy });
+  }catch(err){
+    postMessage({ slot, ok:false, err:String(err), ox, oy });
+  }finally{
+    try{ bitmap.close && bitmap.close(); }catch(_){}
+  }
+};
+  `;
+  const blob = new Blob([src], { type:'application/javascript' });
+  return URL.createObjectURL(blob);
+}
+
+function initWorkers(){
+  if(!USE_WORKERS) return;
+  if(!('Worker' in window) || !('createImageBitmap' in window) || typeof OffscreenCanvas==='undefined'){
+    console.log('[workers] unsupported -> fallback to main thread');
+    return;
+  }
+  if(WORKERS.length) return; // 既に初期化済み
+  const poolSize = Math.min(4, Math.max(2, (navigator.hardwareConcurrency||2)-1));
+  WORKER_URL = makeWorkerURL();
+  for(let i=0;i<poolSize;i++){
+    const w = new Worker(WORKER_URL);
+    w.onmessage = (ev)=>handleWorkerMsg(i, ev.data);
+    WORKERS.push(w); IDLE.push(i);
+  }
+  console.log('[workers] pool size:', WORKERS.length);
+}
+
+function teardownWorkers(){
+  for(const w of WORKERS){ try{ w.terminate(); }catch(_){ } }
+  WORKERS.length = 0; IDLE.length = 0; inFlightSlots.clear();
+  if(WORKER_URL){ URL.revokeObjectURL(WORKER_URL); WORKER_URL=''; }
+  detCache.length = 0;
+}
+
+function handleWorkerMsg(idx, msg){
+  IDLE.push(idx);
+  inFlightSlots.delete(msg.slot);
+
+  // 検出結果（オーバーレイ用）
+  if(msg.ok && msg.loc){
+    detCache.push({
+      corners:[
+        {x: msg.ox + msg.loc.tl.x, y: msg.oy + msg.loc.tl.y},
+        {x: msg.ox + msg.loc.tr.x, y: msg.oy + msg.loc.tr.y},
+        {x: msg.ox + msg.loc.br.x, y: msg.oy + msg.loc.br.y},
+        {x: msg.ox + msg.loc.bl.x, y: msg.oy + msg.loc.bl.y},
+      ],
+      ts: performance.now()
+    });
+  }
+  // データ取り込み（既存ロジックを活用）
+  if(msg.ok && msg.data){
+    if(isTextCamMode()) ingestText(msg.data);
+    else ingestB64(msg.data);
+  }
+
+  // 簡易ログ：ワーカーの処理時間
+  pushSample(perf.workerTimes, Number(msg.time)||0, 50);
+}
+
+async function dispatchSlots(slots){
+  if(!WORKERS.length) return;
+  for(let i=0;i<slots.length;i++){
+    if(!IDLE.length || inFlightSlots.has(i)) continue;
+    const s = slots[i];
+    inFlightSlots.add(i);
+    const idx = IDLE.pop();
+    try{
+      const bmp = await createImageBitmap(el.cam, s.x,s.y,s.w,s.h);
+      WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:s.x, oy:s.y }, [bmp]); // 転送（コピーなし）
+    }catch(_){
+      inFlightSlots.delete(i);
+      IDLE.push(idx);
+    }
+  }
+}
+
+/* ====== 簡易ログ（計測ユーティリティ） ====== */
+const perf = {
+  rafLast: 0,
+  rafSamples: [],
+  workerTimes: [],
+  fallbackTimes: [],
+};
+function pushSample(arr, v, max=60){ if(!isFinite(v)||v<=0) return; arr.push(v); if(arr.length>max) arr.shift(); }
+function avg(arr){ return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
+function fpsFromSamples(samples){ const a = avg(samples); return a>0 ? 1000/a : 0; }
+function updateLog(){
+  if(!el.logToggle?.checked) return;
+  const fps = fpsFromSamples(perf.rafSamples);
+  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+  const avgWorker = avg(perf.workerTimes);
+  const avgFallback = avg(perf.fallbackTimes);
+  const vw = el.cam?.videoWidth||0, vh = el.cam?.videoHeight||0;
+  const poolSize = WORKERS.length||0;
+  const inFlight = inFlightSlots.size||0;
+  const idle = IDLE.length||0;
+  let roiCount = 0, gridTxt = '1';
+  if(isMultiMode()){
+    const rows = parseInt(el.rows?.value||'2',10)||2;
+    const cols = parseInt(el.cols?.value||'2',10)||2;
+    roiCount = rows*cols; gridTxt = `${rows}x${cols}`;
+  }else{ roiCount = 1; }
+
+  const lines = [
+    `解像度: ${vw}×${vh} | モード: ${isMultiMode()? '複数QR':'単一QR'} | プール: ${usePool? 'ON':'OFF'}`,
+    `fps(推定): ${fps.toFixed(1)}`,
+    usePool
+      ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | inFlight ${inFlight} | idle ${idle} | pool ${poolSize}`
+      : `fallback(jsQR): avg ${avgFallback.toFixed(1)} ms/ROI`,
+    `ROI: ${roiCount} / grid ${gridTxt} | ROI余白: ${el.roiMargin?.value ?? 0}`,
+    `ヘッダなし: ${el.noHdr?.checked ? 'ON（受信側ヘッダ無し）':'OFF（ヘッダ付き）'} | 安定判定: ${typeof STABLE_FRAMES!=='undefined'? STABLE_FRAMES:2}f | TTL: ${typeof DEDUPE_TTL!=='undefined'? DEDUPE_TTL:8000}ms`,
+  ];
+  el.logPre.textContent = lines.join('\n');
+}
 
 /* ====== 説明文 ====== */
 const DESC = {
@@ -740,16 +922,25 @@ async function startScan(){
   if(typeof jsQR==='undefined'){ alert('jsQRが読み込まれていません'); return; }
   if(!navigator.mediaDevices?.getUserMedia){ alert('このブラウザはカメラに未対応です'); return; }
   try{
-    camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:1920}, height:{ideal:1080}}, audio:false});
+    // 並列化の準備（対応環境のみ有効化）
+    initWorkers();
+
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }, audio:false
+    });
     el.cam.srcObject=camStream; await el.cam.play();
     ensureOverlaySize(); drawOverlayGrid();
     tickCam();
   }catch(e){ alert('カメラ起動に失敗: '+e.message); }
 }
+
 function stopScan(){
   if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  // スキャン停止時にワーカーも片付け（次回 start で再初期化）
+  teardownWorkers();
 }
+
 function ensureOverlaySize(){
   const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;
   el.camOverlay.width=vw; el.camOverlay.height=vh;
@@ -804,13 +995,39 @@ function tickCam(){
   const w=v.videoWidth, h=v.videoHeight; if(!w||!h){ rafId=requestAnimationFrame(tickCam); return; }
   c.width=w; c.height=h;
 
-  const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
-  const dets=[];
+  const now = performance.now();
+  if(perf.rafLast){ pushSample(perf.rafSamples, now - perf.rafLast, 60); }
+  perf.rafLast = now;
 
+  const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
+
+  // 並列デコードを使うか？
+  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+
+  if(usePool){
+    // スロットをワーカープールへ投げる（非同期）
+    dispatchSlots(slots); // awaitしない：描画は継続
+
+    // オーバーレイ描画（直近の検出結果のみ保持）
+    const t = performance.now();
+    detCache = detCache.filter(d => (t - d.ts) < DET_HOLD_MS);
+    drawOverlayGrid();
+    drawDetections(detCache.map(d => ({ corners:d.corners })));
+
+    updateLog();
+    rafId=requestAnimationFrame(tickCam);
+    return;
+  }
+
+  // === フォールバック（従来のメインスレッド逐次デコード） ===
+  const dets=[];
   if(!isMultiMode()){
     ctx.drawImage(v,0,0,w,h);
     const img=ctx.getImageData(0,0,w,h);
+    const t0=performance.now();
     const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+    const t1=performance.now();
+    pushSample(perf.fallbackTimes, t1-t0, 50);
     if(code?.location){
       const L=code.location;
       dets.push({corners:[L.topLeftCorner,L.topRightCorner,L.bottomRightCorner,L.bottomLeftCorner]});
@@ -821,7 +1038,10 @@ function tickCam(){
       const s=slots[i];
       ctx.drawImage(v, s.x,s.y,s.w,s.h, 0,0,s.w,s.h);
       const img=ctx.getImageData(0,0,s.w,s.h);
+      const t0=performance.now();
       const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      const t1=performance.now();
+      pushSample(perf.fallbackTimes, t1-t0, 50);
       if(code?.location){
         const L=code.location, tg=p=>({x:p.x+s.x,y:p.y+s.y});
         dets.push({corners:[tg(L.topLeftCorner),tg(L.topRightCorner),tg(L.bottomRightCorner),tg(L.bottomLeftCorner)]});
@@ -830,6 +1050,7 @@ function tickCam(){
     }
   }
   drawDetections(dets);
+  updateLog();
   rafId=requestAnimationFrame(tickCam);
 }
 function handleResult(str, slot){
@@ -1055,6 +1276,13 @@ window.addEventListener('resize',()=>{ ensureOverlaySize(); drawOverlayGrid(); }
 
 if(navigator.share){ el.btnShare.style.display='inline-flex'; }
 
+/* 簡易ログの表示切替 */
+on(el.logToggle,'change', ()=>{
+  el.logPanel.style.display = el.logToggle.checked ? 'block' : 'none';
+  el.logPanel.setAttribute('aria-hidden', el.logToggle.checked ? 'false':'true');
+  updateLog();
+});
+
 function openHelp(){
   el.helpModal.classList.add('show'); el.helpModal.setAttribute('aria-hidden','false');
   if(el.helpQR && !el.helpQR.dataset.ready && typeof QRCode!=='undefined'){
@@ -1083,4 +1311,3 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
-

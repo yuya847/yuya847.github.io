@@ -10,14 +10,16 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
 <meta name="theme-color" content="#0d47a1">
 
-<!-- Material Symbols (必要アイコンのみ読込) -->
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=qr_code_2,qr_code_scanner,convert_to_text,fast_forward,fast_rewind,content_copy,content_paste,delete,save_as,help,text_ad,arrow_forward,share,folder,description" rel="stylesheet">
+<!-- Material Symbols: 正式推奨の読み込み。icon_names は使わない -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
 
 <style>
 /* ===== Theme / Base ===== */
 :root{
   --fg:#222; --bg:#fff; --muted:#666; --br:#e0e0e0;
-  /* Material color picks (要望色) */
+  /* Material color picks */
   --pri:#0d47a1;   /* 濃紺 Primary */
   --sec:#039be5;   /* アクセント */
   --tone:#81d4fa;  /* トーナル */
@@ -31,14 +33,17 @@ body{
   display:flex; flex-direction:column;
 }
 
-/* Material Symbols helper */
-.ms{
-  font-family:'Material Symbols Outlined';
-  font-weight:400; font-style:normal; font-size:24px; line-height:1;
-  letter-spacing:normal; text-transform:none; display:inline-block;
-  white-space:nowrap; word-wrap:normal; direction:ltr;
-  -webkit-font-feature-settings:'liga'; -webkit-font-smoothing:antialiased;
+/* Material Symbols (推奨クラス) */
+.material-symbols-outlined{
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal; font-style: normal; font-size:24px; line-height:1;
+  display:inline-block; white-space:nowrap; -webkit-font-smoothing:antialiased;
 }
+/* 互換：以前の .ms でも動くように */
+.ms{ all:unset; font-family:'Material Symbols Outlined'; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-size:24px; line-height:1; display:inline-block }
+
+.badge{display:inline-block;background:#444;color:#fff;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #666}
 
 /* Header */
 header{background:#2d2d2d;color:#fff;padding:10px 14px}
@@ -65,29 +70,24 @@ header h1 img{width:20px;height:20px;display:block}
 .seg button.sel{ background:#e3e6ed; font-weight:700; }
 .seg button:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 2px 8px rgb(0 0 0 / .12); }
 .seg .lbl{ font-size:14px }
-.seg .ms{ font-size:20px }                 /* PC: アイコン少し小さめ */
+.seg .material-symbols-outlined{ font-size:20px }
 .seg .b64-mark{ font-weight:700; letter-spacing:.3px; }
 
-/* PCで4×2に並びやすいよう幅の最小化（自動折返し） */
+/* PC（広い時）は日本語だけ表示 */
 @media(min-width:901px){
-  .seg{ justify-content:flex-start }
-  /* PCでは日本語ラベルだけ表示（要望） */
-  .seg .ms, .seg .b64-mark{ display:none }
+  .seg .material-symbols-outlined, .seg .b64-mark{ display:none }
 }
 
-/* スマホ：4列グリッド、アイコンのみ、もっと小さく */
+/* スマホ：4列・アイコンのみ・小さく */
 @media(max-width:640px){
   .seg{
     display:grid;
     grid-template-columns:repeat(4, minmax(0,1fr));
     gap:6px; padding:6px; border-radius:12px;
   }
-  .seg button{
-    padding:8px 6px; justify-content:center;
-    min-height:44px;
-  }
-  .seg .lbl{ display:none }               /* ラベル非表示（アイコンのみ） */
-  .seg .ms{ font-size:22px }
+  .seg button{ padding:8px 6px; justify-content:center; min-height:44px }
+  .seg .lbl{ display:none }
+  .seg .material-symbols-outlined{ font-size:22px }
   .seg .b64-mark{ display:inline; font-size:12px }
 }
 
@@ -109,13 +109,13 @@ button{cursor:pointer}
 .btn-sec{ background:var(--sec); color:#fff; border:none }
 .btn-tonal{ background:var(--tone); color:#0d47a1; border:none }
 .btn-err{ background:var(--err); color:#fff; border:none }
-.btn-surf{ background:var(--surf); color:#111; }
+.btn-surf{ background:var(--surf); color:#111; border:none }
 button:disabled{opacity:.6;cursor:default}
 
-/* Icon buttons (正方形) */
+/* Icon buttons */
 .icon-btn{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px }
 
-/* Tooltip（小さな吹き出し） */
+/* Tooltip */
 [data-tip]{ position:relative }
 [data-tip]:hover::after, [data-tip]:focus-visible::after{
   content:attr(data-tip); position:absolute; left:50%; transform:translateX(-50%);
@@ -127,7 +127,7 @@ button:disabled{opacity:.6;cursor:default}
   bottom:calc(100% + 2px); border:6px solid transparent; border-top-color:rgba(0,0,0,.88);
 }
 
-/* ドロップゾーン */
+/* Dropzone */
 .card{border:2px dashed #b0bec5; border-radius:10px; padding:16px; background:#fafafa; text-align:center}
 .card.big{min-height:220px; display:flex; align-items:center; justify-content:center; font-size:15px}
 
@@ -141,7 +141,7 @@ button:disabled{opacity:.6;cursor:default}
 .fps-wrap{display:flex;align-items:center;gap:6px}
 .fps-wrap input[type="number"]{ width:84px; text-align:right }
 
-/* 受信（カメラ/HID） */
+/* カメラ受信 */
 .cam-wrap{display:flex;flex-direction:column;gap:10px}
 .video-box{position:relative}
 video#cam{width:100%;max-height:320px;background:#000;border-radius:8px;display:block}
@@ -161,15 +161,11 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
 .qr-cell{width:120px;height:120px;border:1px solid #eee;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
 kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-radius:4px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
 
-/* モバイル：入力→出力の縦並び、出力の高さを合わせやすく */
-@media(max-width:640px){
-  .grid{ grid-template-columns:1fr }
-}
+/* モバイル：縦並び */
+@media(max-width:640px){ .grid{ grid-template-columns:1fr } }
 
 /* Motion reduce */
-@media (prefers-reduced-motion: reduce){
-  *{ transition:none !important; animation:none !important; }
-}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 </style>
 
 <!-- QR & Scanner -->
@@ -184,9 +180,9 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge" style="background:#444;color:#fff;border:1px solid #666;padding:4px 8px;border-radius:999px;font-size:12px">ver 1.2</span>
+      <span id="ver" class="badge">ver 1.4</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
-        <span class="ms">help</span>
+        <span class="material-symbols-outlined">help</span>
       </button>
     </div>
   </div>
@@ -198,43 +194,43 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   <div class="mode">
     <div class="seg" role="tablist" aria-label="mode">
       <button id="m-enc" class="sel" role="tab" data-tip="テキスト → Base64">
-        <span class="ms">text_ad</span><span class="b64-mark">B64</span><span class="lbl">テキスト → Base64</span>
+        <span class="material-symbols-outlined">text_ad</span><span class="b64-mark">B64</span><span class="lbl">テキスト → Base64</span>
       </button>
       <button id="m-dec" role="tab" data-tip="Base64 → テキスト">
-        <span class="ms">convert_to_text</span><span class="lbl">Base64 → テキスト</span>
+        <span class="material-symbols-outlined">convert_to_text</span><span class="lbl">Base64 → テキスト</span>
       </button>
       <button id="m-file" role="tab" data-tip="ファイル → Base64">
-        <span class="ms">folder</span><span class="b64-mark">B64</span><span class="lbl">ファイル → Base64</span>
+        <span class="material-symbols-outlined">folder</span><span class="b64-mark">B64</span><span class="lbl">ファイル → Base64</span>
       </button>
       <button id="m-b2f" role="tab" data-tip="Base64 → ファイル">
-        <span class="ms">description</span><span class="lbl">Base64 → ファイル</span>
+        <span class="material-symbols-outlined">description</span><span class="lbl">Base64 → ファイル</span>
       </button>
       <button id="m-cam" role="tab" data-tip="QR → Base64">
-        <span class="ms">qr_code_scanner</span><span class="b64-mark">B64</span><span class="lbl">QR → Base64</span>
+        <span class="material-symbols-outlined">qr_code_scanner</span><span class="b64-mark">B64</span><span class="lbl">QR → Base64</span>
       </button>
       <button id="m-camtxt" role="tab" data-tip="QR → テキスト">
-        <span class="ms">qr_code_scanner</span><span class="lbl">QR → テキスト</span>
+        <span class="material-symbols-outlined">qr_code_scanner</span><span class="lbl">QR → テキスト</span>
       </button>
       <button id="m-cam-multi" role="tab" data-tip="QR複数 → Base64">
-        <!-- 重ねQR（同サイズ・小さめ） -->
-        <span class="ms" style="position:relative;width:22px;height:22px">
-          <span class="ms" style="position:absolute;left:-2px;top:-2px;font-size:16px;opacity:.95">qr_code_2</span>
-          <span class="ms" style="position:absolute;left:6px;top:6px;font-size:16px;opacity:.95">qr_code_2</span>
+        <!-- 小さめ同サイズで重ね -->
+        <span class="material-symbols-outlined" style="position:relative;width:22px;height:22px">
+          <span class="material-symbols-outlined" style="position:absolute;left:-2px;top:-2px;font-size:16px">qr_code_2</span>
+          <span class="material-symbols-outlined" style="position:absolute;left:6px;top:6px;font-size:16px">qr_code_2</span>
         </span>
         <span class="b64-mark">B64</span>
         <span class="lbl">QR複数 → Base64</span>
       </button>
       <button id="m-camtxt-multi" role="tab" data-tip="QR複数 → テキスト">
-        <span class="ms" style="position:relative;width:22px;height:22px">
-          <span class="ms" style="position:absolute;left:-2px;top:-2px;font-size:16px;opacity:.95">qr_code_2</span>
-          <span class="ms" style="position:absolute;left:6px;top:6px;font-size:16px;opacity:.95">qr_code_2</span>
+        <span class="material-symbols-outlined" style="position:relative;width:22px;height:22px">
+          <span class="material-symbols-outlined" style="position:absolute;left:-2px;top:-2px;font-size:16px">qr_code_2</span>
+          <span class="material-symbols-outlined" style="position:absolute;left:6px;top:6px;font-size:16px">qr_code_2</span>
         </span>
         <span class="lbl">QR複数 → テキスト</span>
       </button>
     </div>
   </div>
 
-  <!-- 簡単なモード説明（短文） -->
+  <!-- 簡単なモード説明 -->
   <div id="mode-desc" class="panel" style="padding:10px">
     <div id="desc-text">文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときに便利です。</div>
   </div>
@@ -248,7 +244,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <!-- 入力テキスト -->
       <textarea id="input" placeholder="ここにテキストまたはBase64を入力…"></textarea>
 
-      <!-- ドロップ（FILEモードで表示。高さ大きめ） -->
+      <!-- FILE: ドロップ（高さ大きめ） -->
       <div id="drop-zone" class="card big" style="display:none;">
         <div>
           <div>ファイルをドラッグ＆ドロップ</div>
@@ -257,14 +253,14 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <!-- B2F: 保存名/拡張子（右寄せ） -->
+      <!-- B2F: 右寄せの保存UI -->
       <div id="b2f-row" class="row" style="display:none; justify-content:space-between; align-items:center;">
         <div class="row" style="gap:8px">
           <button id="btn-paste" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
-            <span class="ms">content_paste</span>
+            <span class="material-symbols-outlined">content_paste</span>
           </button>
           <button id="btn-clear" class="icon-btn btn-err" data-tip="クリア">
-            <span class="ms">delete</span>
+            <span class="material-symbols-outlined">delete</span>
           </button>
         </div>
 
@@ -282,7 +278,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
             <option value="bin">bin</option>
           </select>
           <button id="btn-save" class="btn-pri" data-tip="名前を付けて保存">
-            <span class="ms">save_as</span>
+            <span class="material-symbols-outlined">save_as</span>
           </button>
         </div>
       </div>
@@ -291,21 +287,18 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <div id="input-actions" class="row" style="justify-content:space-between;">
         <div class="row">
           <button id="btn-paste-text" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
-            <span class="ms">content_paste</span>
+            <span class="material-symbols-outlined">content_paste</span>
           </button>
           <button id="btn-clear-text" class="icon-btn btn-err" data-tip="クリア">
-            <span class="ms">delete</span>
+            <span class="material-symbols-outlined">delete</span>
           </button>
         </div>
-
         <div class="row">
-          <!-- 変換（アイコンのみ / ツールチップにショートカット表示） -->
           <button id="btn-convert" class="icon-btn btn-tonal" data-tip="変換（Ctrl/⌘+Enter）">
-            <span class="ms">convert_to_text</span>
+            <span class="material-symbols-outlined">convert_to_text</span>
           </button>
-          <!-- 変換＋QR（アイコンのみ / ツールチップにショートカット表示） -->
           <button id="btn-convert-qr" class="icon-btn btn-sec" data-tip="変換＋QR（Shift+Enter）">
-            <span class="ms">qr_code_2</span>
+            <span class="material-symbols-outlined">qr_code_2</span>
           </button>
         </div>
       </div>
@@ -317,11 +310,10 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <textarea id="output" placeholder="ここに結果が表示されます"></textarea>
       <div class="row" id="row-output-actions" style="justify-content:flex-start">
         <button id="btn-copy" class="icon-btn btn-tonal" data-tip="コピー">
-          <span class="ms">content_copy</span>
+          <span class="material-symbols-outlined">content_copy</span>
         </button>
-        <!-- iOSなど共有（モバイルで主に活躍） -->
         <button id="btn-share" class="icon-btn btn-tonal" data-tip="共有" style="display:none;">
-          <span class="ms">share</span>
+          <span class="material-symbols-outlined">share</span>
         </button>
       </div>
     </section>
@@ -340,13 +332,13 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       </div>
       <div class="qr-bottom">
         <button id="btn-prev" class="icon-btn btn-surf" data-tip="巻き戻し">
-          <span class="ms">fast_rewind</span>
+          <span class="material-symbols-outlined">fast_rewind</span>
         </button>
         <button id="btn-play" class="icon-btn btn-tonal" data-tip="再生/一時停止">
-          <span class="ms">play_arrow</span>
+          <span class="material-symbols-outlined">play_arrow</span>
         </button>
         <button id="btn-next" class="icon-btn btn-surf" data-tip="早送り">
-          <span class="ms">fast_forward</span>
+          <span class="material-symbols-outlined">fast_forward</span>
         </button>
         <div class="fps-wrap">
           <label for="fps">FPS</label>
@@ -366,21 +358,19 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
     <div class="cam-wrap">
       <div class="rx-row">
         <button id="btn-scan-start" class="icon-btn btn-pri" data-tip="カメラ開始">
-          <span class="ms">qr_code_scanner</span>
+          <span class="material-symbols-outlined">qr_code_scanner</span>
         </button>
         <button id="btn-scan-stop" class="icon-btn btn-err" data-tip="停止">
-          <span class="ms">stop</span>
+          <span class="material-symbols-outlined">stop</span>
         </button>
       </div>
 
-      <!-- ヘッダなし1枚停止（控えめ表示） -->
       <div class="rx-row" id="auto-stop-wrap" style="display:none; opacity:.75; font-size:13px">
         <label class="nohdr">
           <input id="auto-stop-hl" type="checkbox"> ヘッダなしは1枚読んだら自動停止（QR→テキスト）
         </label>
       </div>
 
-      <!-- 複数ROI -->
       <div class="rx-row" id="grid-opts" style="display:none;">
         <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
         <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
@@ -400,7 +390,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 </div>
 
-<!-- Help Modal -->
+<!-- Help Modal（ver1.4 仕様） -->
 <div id="help-modal" class="modal" aria-hidden="true">
   <div class="box" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div class="topbar">
@@ -426,11 +416,11 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
           <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換。QR化して送れます。</li>
           <li><b>Base64 → テキスト</b>：Base64（文字列）を日本語等のテキストへ復元。</li>
           <li><b>ファイル → Base64</b>：PDF/画像等をBase64化。QRでカルテへ入力。</li>
-          <li><b>Base64 → ファイル</b>：受け取ったBase64を再びファイルに復元。</li>
+          <li><b>Base64 → ファイル</b>：受け取ったBase64を元のファイルに復元。</li>
           <li><b>QR → Base64</b>：QRをBase64として受信。</li>
           <li><b>QR → テキスト</b>：QRを直接テキストに復元。</li>
-          <li><b>QR複数 → Base64</b>：グリッド分割で複数QRを同時にBase64受信。</li>
-          <li><b>QR複数 → テキスト</b>：複数QRを同時にテキスト受信。</li>
+          <li><b>QR複数 → Base64</b>：格子分割で複数のQRを同時にBase64受信。</li>
+          <li><b>QR複数 → テキスト</b>：複数のQRを同時にテキスト受信。</li>
         </ul>
       </div>
 
@@ -455,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.2', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.4', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -495,7 +485,7 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
 };
 
-/* ====== モード説明テキスト ====== */
+/* ====== 説明 ====== */
 const DESC = {
   ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときに便利です。',
   DEC:'Base64という文字列をテキストへ復元します。電子カルテから受け取ったBase64を日本語に戻したいときに。',
@@ -569,7 +559,7 @@ function tickPlay(){
   const interval=Math.max(1,Math.round(1000/fpsRate));
   timer=setTimeout(()=>{
     if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTime(); tickPlay(); }
-    else { playing=false; el.btnPlay.querySelector('.ms').textContent='play_arrow'; }
+    else { playing=false; el.btnPlay.querySelector('.material-symbols-outlined').textContent='play_arrow'; }
   }, interval);
 }
 function buildSequence(){
@@ -779,8 +769,7 @@ async function pasteTo(elm){
   try{
     const t=await navigator.clipboard.readText();
     if(!t){ toast('クリップボードが空です',true); return; }
-    elm.value=t; toast('貼り付けました');
-    autoResize(elm);
+    elm.value=t; toast('貼り付けました'); autoResize(elm);
   }catch(e){ toast('貼り付けを許可してください',true); }
 }
 function handleFiles(files){
@@ -810,7 +799,7 @@ function autoResize(ta){
   ta.style.height='auto'; ta.style.height = Math.min(600, Math.max(120, ta.scrollHeight))+'px';
 }
 
-/* ====== UI: モード切替 ====== */
+/* ====== モード切替 ====== */
 function setMode(to){
   tabState[mode].in = el.input?.value ?? ''; tabState[mode].out = el.output?.value ?? '';
   mode=to;
@@ -824,9 +813,9 @@ function setMode(to){
   const isFile=(mode==='FILE');
   const isB2F =(mode==='B2F');
 
-  // 入出力の表示
+  // 入出力表示
   el.panelInput.style.display  = (isText||isFile||isB2F)?'block':'none';
-  el.panelOutput.style.display = isB2F ? 'block' : 'block'; // 出力は常時。B2Fもコピー等見える
+  el.panelOutput.style.display = 'block';
 
   // 入力テキスト/ドロップ/B2F列
   el.input.style.display       = (isText||mode==='DEC'||mode==='ENC') ? 'block' : (isB2F ? 'block' : 'none');
@@ -838,19 +827,19 @@ function setMode(to){
   el.qrSend.style.display      = (!isCamMode()) ? 'block':'none';
   el.qrRecv.style.display      = isCamMode()    ? 'block':'none';
   if(isCamMode() && el.qrRecv.parentElement!==el.textIO){
-    el.textIO.insertBefore(el.qrRecv, el.panelOutput); // 受信→出力の順（要望）
+    el.textIO.insertBefore(el.qrRecv, el.panelOutput); // 受信→出力
   }
 
-  // QR→テキストのオプション
+  // オプション表示
   el.autoStopWrap.style.display = isTextCamMode() ? 'flex' : 'none';
   el.gridOpts.style.display     = isMultiMode()   ? 'flex' : 'none';
 
-  // プレースホルダ
-  el.output.placeholder = (mode==='DEC'||isTextCamMode()) ? 'ここにテキストが表示されます' : 'ここに結果が表示されます';
-
   // 説明
-  const key = ({ENC:'ENC',DEC:'DEC',FILE:'FILE',B2F:'B2F',CAM_B64:'CAM_B64',CAM_TXT:'CAM_TXT',CAM_B64_MULTI:'CAM_B64_MULTI',CAM_TXT_MULTI:'CAM_TXT_MULTI'})[mode];
-  el.descText.textContent = DESC[key] || '';
+  el.descText.textContent = ({
+    ENC:DESC.ENC, DEC:DESC.DEC, FILE:DESC.FILE, B2F:DESC.B2F,
+    CAM_B64:DESC.CAM_B64, CAM_TXT:DESC.CAM_TXT,
+    CAM_B64_MULTI:DESC.CAM_B64_MULTI, CAM_TXT_MULTI:DESC.CAM_TXT_MULTI
+  })[({ENC:'ENC',DEC:'DEC',FILE:'FILE',B2F:'B2F',CAM_B64:'CAM_B64',CAM_TXT:'CAM_TXT',CAM_B64_MULTI:'CAM_B64_MULTI',CAM_TXT_MULTI:'CAM_TXT_MULTI'})[mode]] || '';
 
   autoResize(el.input); autoResize(el.output);
 }
@@ -871,7 +860,6 @@ on(el.btnConvertQR,'click',convertAndQR);
 on(el.input,'keydown',e=>{
   if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); convert(); }
   if(e.shiftKey && e.key==='Enter'){ e.preventDefault(); convertAndQR(); }
-  // 自動リサイズ
   setTimeout(()=>autoResize(el.input),0);
 });
 on(el.output,'input',()=>autoResize(el.output));
@@ -879,11 +867,11 @@ on(el.output,'input',()=>autoResize(el.output));
 on(el.btnCopy,'click',copyOut);
 on(el.btnShare,'click',shareOut);
 
-// テキスト系ペースト/クリア
+// テキスト系
 on(el.btnPasteText,'click',()=>pasteTo(el.input));
 on(el.btnClearText,'click',()=>{ el.input.value=''; autoResize(el.input); });
 
-// B2F側ペースト/クリア/保存
+// B2F
 on(el.btnPaste,'click',()=>pasteTo(el.input));
 on(el.btnClear,'click',()=>{ el.input.value=''; autoResize(el.input); });
 on(el.btnSave,'click',saveFile);
@@ -899,7 +887,7 @@ on(el.btnPrev,'click',()=>{ if(idx>0){ idx--; el.scrub.value=idx; renderQR(); up
 on(el.btnNext,'click',()=>{ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTime(); }});
 on(el.btnPlay,'click',()=>{
   playing=!playing;
-  el.btnPlay.querySelector('.ms').textContent = playing?'pause':'play_arrow';
+  el.btnPlay.querySelector('.material-symbols-outlined').textContent = playing?'pause':'play_arrow';
   if(playing) tickPlay();
 });
 on(el.scrub,'input',()=>{ idx=parseInt(el.scrub.value||'0',10)||0; renderQR(); updateTime(); });
@@ -907,7 +895,7 @@ function setFps(v){
   let val=parseFloat(v); if(isNaN(val)) val=2.0;
   val=Math.max(0.5, Math.min(120, val));
   el.fps.value=String(val); el.fpsNum.value=val.toFixed(1); fpsRate=val; updateTime();
-  if(playing){ playing=false; el.btnPlay.querySelector('.ms').textContent='play_arrow'; setTimeout(()=>{ playing=true; el.btnPlay.querySelector('.ms').textContent='pause'; tickPlay(); },0); }
+  if(playing){ playing=false; el.btnPlay.querySelector('.material-symbols-outlined').textContent='play_arrow'; setTimeout(()=>{ playing=true; el.btnPlay.querySelector('.material-symbols-outlined').textContent='pause'; tickPlay(); },0); }
 }
 on(el.fps,'input',()=>setFps(el.fps.value));
 on(el.fpsNum,'input',()=>setFps(el.fpsNum.value));
@@ -919,7 +907,7 @@ on(el.btnScanStop,'click',stopScan);
 el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 window.addEventListener('resize',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 
-// iOS共有有効化
+// iOS共有
 if(navigator.share){ el.btnShare.style.display='inline-flex'; }
 
 // ヘルプ
@@ -942,7 +930,7 @@ setFps(2);
 autoResize(el.input); autoResize(el.output);
 });
 
-/* ====== 小トースト ====== */
+/* ====== トースト ====== */
 function toast(msg,bad=false){
   const d=document.createElement('div');
   d.textContent=msg;

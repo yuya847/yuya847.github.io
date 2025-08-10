@@ -76,7 +76,7 @@ header h1 img{width:20px;height:20px;display:block}
 /* PC（広い時）＝日本語ラベルのみ表示 */
 @media(min-width:901px){
   .seg .i, .seg .arrow, .seg .b64-mark{ display:none !important; } /* ← PCは日本語だけ */
-  .seg .lbl{ display:inline !important; }
+  .seg .lbl{ display:inline !重要; }
 }
 
 /* スマホ：4列・アイコン＋矢印のみ表示（小さくして収まる） */
@@ -172,7 +172,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 /* ==== Tooltip (吹き出し) using [data-tip] ==== */
 [data-tip] { position: relative; }
-
 [data-tip]::after{
   content: attr(data-tip);
   position: absolute;
@@ -181,12 +180,12 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   transform: translateX(-50%) translateY(4px) scale(.98);
   background: rgba(33,33,33,.95);
   color: #fff;
-  padding: 4px 6px;                /* 小さく */
-  border-radius: 6px;              /* 小さく */
-  font-size: 11px;                 /* 小さく */
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 11px;
   line-height: 1.35;
-  white-space: nowrap;             /* 横一行に固定 */
-  writing-mode: horizontal-tb;     /* 横書きを明示 */
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
   box-shadow: 0 8px 24px rgba(0,0,0,.18);
   pointer-events: none;
   opacity: 0;
@@ -199,7 +198,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   bottom: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  border: 5px solid transparent;   /* 小さく */
+  border: 5px solid transparent;
   border-top-color: rgba(33,33,33,.95);
   opacity: 0;
   transition: opacity .12s ease-out, transform .12s ease-out;
@@ -213,14 +212,13 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   opacity: 1;
   transform: translateX(-50%) translateY(0) scale(1);
 }
-
 /* PC時（日本語ラベルがフル表示）→ モードタブの吹き出しは非表示 */
 @media (min-width:901px){
   .seg button[data-tip]::after,
   .seg button[data-tip]::before{ content:none !important; }
 }
 
-/* ==== Hover Motion: 全ボタンを少し拡大＆明るく ==== */
+/* ==== Hover Motion ==== */
 button, .icon-btn{
   transition: transform .08s ease-out, filter .15s ease-out, box-shadow .15s ease-out;
   will-change: transform, filter;
@@ -231,21 +229,19 @@ button:not(:disabled):hover,
   filter: brightness(1.06);
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
-/* キーボード操作でも同等のフィードバック */
 button:not(:disabled):focus-visible,
 .icon-btn:not(:disabled):focus-visible{
   outline: 2px solid var(--sec);
   outline-offset: 2px;
   transform: translateY(-1px) scale(1.03);
 }
-/* 既存のセグメントタブのホバーを上書きで拡張 */
 .seg button:hover:not(:disabled){
   transform: translateY(-1px) scale(1.03);
   filter: brightness(1.05);
   box-shadow: 0 2px 8px rgb(0 0 0 / .12);
 }
 
-/* ==== 簡易ログ（目立たないトグル＋浮遊パネル） ==== */
+/* ==== 簡易ログ ==== */
 #dev-opts{ align-self:flex-end; font-size:11px; opacity:.35; }
 #dev-opts label{ cursor:pointer; user-select:none; }
 #dev-opts input{ vertical-align:middle }
@@ -262,7 +258,7 @@ button:not(:disabled):focus-visible,
   margin:0; font-size:12px; line-height:1.35; white-space:pre-wrap;
   font-family:ui-monospace,Menlo,Consolas,monospace;
 }
-/* ==== 簡易ログ：閉じる（✕）ボタン ==== */
+/* ✕ボタン */
 .log-close-btn{
   position:absolute; top:6px; right:6px;
   width:22px; height:22px;
@@ -463,7 +459,7 @@ button:not(:disabled):focus-visible,
       <div class="qr-scrub">
         <span id="elapsed" class="time">00:00</span>
         <input id="scrub" class="range" type="range" min="0" max="0" step="1" value="0"/>
-        <span id="duration" class="time">00:00</span> <!-- ← 残り時間を表示 -->
+        <span id="duration" class="time">00:00</span>
         <span id="frame-ind" class="muted">0 / 0</span>
       </div>
       <div class="qr-bottom">
@@ -530,7 +526,7 @@ button:not(:disabled):focus-visible,
   </div>
 </div>
 
-<!-- 簡易ログパネル（✕ 追加） -->
+<!-- 簡易ログパネル -->
 <div id="log-panel" aria-live="polite" aria-hidden="true">
   <button id="log-close" class="log-close-btn" aria-label="簡易ログを閉じる">×</button>
   <h3>簡易ログ</h3>
@@ -635,7 +631,7 @@ const el = {
   logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close')
 };
 
-/* ====== 吹き出しショートカット（ボタンに追記） ====== */
+/* ====== 吹き出しショートカット ====== */
 function applyShortcutTips(){
   if(el.btnConvert)   el.btnConvert.setAttribute('data-tip','変換 (Ctrl+Enter)');
   if(el.btnConvertQR) el.btnConvertQR.setAttribute('data-tip','変換＋QR (Shift+Enter)');
@@ -644,15 +640,89 @@ applyShortcutTips();
 
 /* ====== Worker Pool (ImageBitmap) ====== */
 /* 並列デコード: createImageBitmap を転送し、Worker内 OffscreenCanvas で jsQR を実行 */
-let WORKERS = [];
+let WORKERS = [];            // Worker or null（終端済みは null）
 let WORKER_URL = '';
-let IDLE = [];
+let IDLE = [];               // アイドルな worker index のスタック
 let inFlightSlots = new Set();
 let detCache = [];                         // {corners:[{x,y}×4], ts:number}
+
 const DET_HOLD_MS = 180;                   // 検出枠を短時間残す
 const USE_WORKERS = true;                  // 無効化したい場合は false
-const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化（true推奨）
-let dispatchCursor = 0;                    // ★ 巡回開始インデックス
+const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化
+const MIN_POOL = 1;
+const MAX_POOL = Math.max(2, Math.min(8, (navigator.hardwareConcurrency||4)-1));
+let dispatchCursor = 0;                    // 巡回開始インデックス
+let adjustTimer = null;
+
+/* サポート判定 */
+function workerSupported(){
+  return ('Worker' in window) && ('createImageBitmap' in window) && (typeof OffscreenCanvas !== 'undefined');
+}
+
+/* 現在のアクティブWorker数 */
+function activeWorkerCount(){
+  let c=0; for(let i=0;i<WORKERS.length;i++){ if(WORKERS[i]) c++; }
+  return c;
+}
+
+/* 目標プール数（rows*cols をベースに） */
+function getDesiredPoolSize(){
+  if(!USE_WORKERS) return 0;
+  if(!workerSupported()) return 0;
+  if(WORKERS_IN_MULTI_ONLY && !isMultiMode()) return 0;
+  const r = parseInt(el.rows?.value||'2',10)||2;
+  const c = parseInt(el.cols?.value||'2',10)||2;
+  let desired = r*c;
+  desired = Math.max(MIN_POOL, Math.min(MAX_POOL, desired));
+  return desired;
+}
+
+/* Worker生成（1つ） */
+function spawnOneWorker(){
+  if(!WORKER_URL) WORKER_URL = makeWorkerURL();
+  const idx = WORKERS.length;
+  const w = new Worker(WORKER_URL);
+  w.onmessage = (ev)=>handleWorkerMsg(idx, ev.data);
+  WORKERS.push(w);
+  IDLE.push(idx);
+}
+
+/* アイドルWorkerを1つ終了 */
+function retireOneIdleWorker(){
+  while(IDLE.length){
+    const idx = IDLE.pop();
+    const w = WORKERS[idx];
+    if(!w) continue; // 既に終了
+    try{ w.terminate(); }catch(_){}
+    WORKERS[idx] = null; // スロットは残す（indexを安定化）
+    return true;
+  }
+  return false; // アイドルが無いので縮小不可（次の完了を待つ）
+}
+
+/* 目標プール数に合わせて増減 */
+function ensurePoolSize(target){
+  if(!workerSupported() || !USE_WORKERS) return;
+
+  target = Math.max(0, Math.min(MAX_POOL, target|0));
+  // 増やす
+  while(activeWorkerCount() < target){
+    spawnOneWorker();
+  }
+  // 減らす（アイドルがある範囲で徐々に）
+  while(activeWorkerCount() > target){
+    if(!retireOneIdleWorker()) break;
+  }
+}
+
+/* 調整（デバウンス） */
+function scheduleAdjustWorkers(immediate=false){
+  if(!USE_WORKERS || !workerSupported()) return;
+  const apply = ()=> ensurePoolSize(getDesiredPoolSize());
+  if(immediate){ apply(); return; }
+  clearTimeout(adjustTimer);
+  adjustTimer = setTimeout(apply, 80);
+}
 
 function makeWorkerURL(){
   const src = `
@@ -690,31 +760,29 @@ onmessage = async (e) => {
 }
 
 function initWorkers(){
-  if(!USE_WORKERS) return;
-  if(!('Worker' in window) || !('createImageBitmap' in window) || typeof OffscreenCanvas==='undefined'){
-    console.log('[workers] unsupported -> fallback to main thread');
-    return;
-  }
-  if(WORKERS.length) return; // 既に初期化済み
-  const poolSize = Math.min(4, Math.max(2, (navigator.hardwareConcurrency||2)-1));
-  WORKER_URL = makeWorkerURL();
-  for(let i=0;i<poolSize;i++){
-    const w = new Worker(WORKER_URL);
-    w.onmessage = (ev)=>handleWorkerMsg(i, ev.data);
-    WORKERS.push(w); IDLE.push(i);
-  }
-  console.log('[workers] pool size:', WORKERS.length);
+  if(!USE_WORKERS || !workerSupported()) return;
+  if(!WORKER_URL) WORKER_URL = makeWorkerURL();
+  // 起動時の初期数は目標に合わせる（行列ベース）
+  ensurePoolSize(getDesiredPoolSize());
 }
 
 function teardownWorkers(){
-  for(const w of WORKERS){ try{ w.terminate(); }catch(_){ } }
-  WORKERS.length = 0; IDLE.length = 0; inFlightSlots.clear();
+  for(let i=0;i<WORKERS.length;i++){
+    const w = WORKERS[i];
+    if(!w) continue;
+    try{ w.terminate(); }catch(_){}
+    WORKERS[i] = null;
+  }
+  IDLE.length = 0; inFlightSlots.clear();
   if(WORKER_URL){ URL.revokeObjectURL(WORKER_URL); WORKER_URL=''; }
   detCache.length = 0;
-  dispatchCursor = 0;                   // ★ 巡回位置をリセット
+  dispatchCursor = 0;
 }
 
 function handleWorkerMsg(idx, msg){
+  // 既に終端済みのスロットは無視
+  if(!WORKERS[idx]) return;
+
   IDLE.push(idx);
   inFlightSlots.delete(msg.slot);
 
@@ -736,12 +804,18 @@ function handleWorkerMsg(idx, msg){
     else ingestB64(msg.data);
   }
 
+  // 縮小要求がある場合、アイドル復帰のタイミングで止める
+  const desired = getDesiredPoolSize();
+  if(activeWorkerCount() > desired){
+    retireOneIdleWorker();
+  }
+
   // 簡易ログ：ワーカーの処理時間
   pushSample(perf.workerTimes, Number(msg.time)||0, 50);
 }
 
 async function dispatchSlots(slots){
-  if(!WORKERS.length) return;
+  if(activeWorkerCount() === 0) return;
   const n = slots.length;
   if(n === 0) return;
 
@@ -756,16 +830,20 @@ async function dispatchSlots(slots){
 
     const s = slots[i];
 
-    // 念のため境界クランプ（Safariの切り出し境界バグ対策）
+    // 境界クランプ（Safari対策）
     const vw = el.cam.videoWidth || 0, vh = el.cam.videoHeight || 0;
     let sx = Math.max(0, Math.min(s.x, vw-1));
     let sy = Math.max(0, Math.min(s.y, vh-1));
     let sw = Math.max(1, Math.min(s.w, vw - sx));
     let sh = Math.max(1, Math.min(s.h, vh - sy));
-    if(sw < 4 || sh < 4){ continue; } // 極端に小さい領域はスキップ
+    if(sw < 4 || sh < 4){ continue; }
 
     inFlightSlots.add(i);
     const idx = IDLE.pop();
+
+    // idx が生きていることを確認（縮小後の残骸を避ける）
+    if(idx==null || !WORKERS[idx]){ inFlightSlots.delete(i); continue; }
+
     try{
       const bmp = await createImageBitmap(el.cam, sx, sy, sw, sh);
       WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:sx, oy:sy }, [bmp]);
@@ -774,17 +852,18 @@ async function dispatchSlots(slots){
       dispatchCursor = (i + 1) % n;
     }catch(_){
       inFlightSlots.delete(i);
-      IDLE.push(idx);
+      // 失敗したら idx をアイドルに戻す（ただし生きていれば）
+      if(WORKERS[idx]) IDLE.push(idx);
     }
   }
 
-  // 割り当てが1つも無かった場合も、少しずつ進めて“いつかは回ってくる”ように
+  // 割り当てが無ければ少し進めて starvation 回避
   if(assigned === 0){
     dispatchCursor = (dispatchCursor + 1) % n;
   }
 }
 
-/* ====== 簡易ログ（計測ユーティリティ） ====== */
+/* ====== 簡易ログ（計測） ====== */
 const perf = {
   rafLast: 0,
   rafSamples: [],
@@ -797,11 +876,11 @@ function fpsFromSamples(samples){ const a = avg(samples); return a>0 ? 1000/a : 
 function updateLog(){
   if(!el.logToggle?.checked) return;
   const fps = fpsFromSamples(perf.rafSamples);
-  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+  const poolActive = activeWorkerCount();
+  const usePool = USE_WORKERS && workerSupported() && poolActive && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
   const avgWorker = avg(perf.workerTimes);
   const avgFallback = avg(perf.fallbackTimes);
   const vw = el.cam?.videoWidth||0, vh = el.cam?.videoHeight||0;
-  const poolSize = WORKERS.length||0;
   const inFlight = inFlightSlots.size||0;
   const idle = IDLE.length||0;
   let roiCount = 0, gridTxt = '1';
@@ -815,7 +894,7 @@ function updateLog(){
     `解像度: ${vw}×${vh} | モード: ${isMultiMode()? '複数QR':'単一QR'} | プール: ${usePool? 'ON':'OFF'}`,
     `fps(推定): ${fps.toFixed(1)}`,
     usePool
-      ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | inFlight ${inFlight} | idle ${idle} | pool ${poolSize}`
+      ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | inFlight ${inFlight} | idle ${idle} | poolActive ${poolActive}`
       : `fallback(jsQR): avg ${avgFallback.toFixed(1)} ms/ROI`,
     `ROI: ${roiCount} / grid ${gridTxt} | ROI余白: ${el.roiMargin?.value ?? 0}`,
     `ヘッダなし: ${el.noHdr?.checked ? 'ON（受信側ヘッダ無し）':'OFF（ヘッダ付き）'} | 安定判定: ${typeof STABLE_FRAMES!=='undefined'? STABLE_FRAMES:2}f | TTL: ${typeof DEDUPE_TTL!=='undefined'? DEDUPE_TTL:8000}ms`,
@@ -891,14 +970,13 @@ function renderQR(){
   const text=qrChunks[idx]||'';
   new QRCode(el.qrWrap,{text,width:300,height:300,correctLevel:QRCode.CorrectLevel.M});
 }
-/* ★ 右側は残り時間表示に変更 */
 function updateTime(){
   const total=qrChunks.length;
   const dur = total / fpsRate;
   const cur = (idx+1) / fpsRate;
   const remain = Math.max(0, dur - cur);
-  el.duration.textContent = fmt(remain);  // 残り
-  el.elapsed.textContent  = fmt(cur);     // 経過
+  el.duration.textContent = fmt(remain);
+  el.elapsed.textContent  = fmt(cur);
   el.frameInd.textContent=`${Math.min(idx+1,total)} / ${total}`;
 }
 function tickPlay(){
@@ -965,7 +1043,7 @@ async function startScan(){
   if(typeof jsQR==='undefined'){ alert('jsQRが読み込まれていません'); return; }
   if(!navigator.mediaDevices?.getUserMedia){ alert('このブラウザはカメラに未対応です'); return; }
   try{
-    // 並列化の準備（対応環境のみ有効化）
+    // 並列化の準備＆行列に合わせてプール初期化
     initWorkers();
 
     camStream = await navigator.mediaDevices.getUserMedia({
@@ -973,6 +1051,10 @@ async function startScan(){
     });
     el.cam.srcObject=camStream; await el.cam.play();
     ensureOverlaySize(); drawOverlayGrid();
+
+    // 実画像サイズが確定した後にも行列ベースで再調整
+    scheduleAdjustWorkers(true);
+
     tickCam();
   }catch(e){ alert('カメラ起動に失敗: '+e.message); }
 }
@@ -980,7 +1062,6 @@ async function startScan(){
 function stopScan(){
   if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  // スキャン停止時にワーカーも片付け（次回 start で再初期化）
   teardownWorkers();
 }
 
@@ -1045,11 +1126,12 @@ function tickCam(){
   const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
 
   // 並列デコードを使うか？
-  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+  const poolActive = activeWorkerCount();
+  const usePool = USE_WORKERS && workerSupported() && poolActive && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
 
   if(usePool){
     // スロットをワーカープールへ投げる（非同期）
-    dispatchSlots(slots); // awaitしない：描画は継続
+    dispatchSlots(slots); // awaitしない
 
     // オーバーレイ描画（直近の検出結果のみ保持）
     const t = performance.now();
@@ -1062,7 +1144,7 @@ function tickCam(){
     return;
   }
 
-  // === フォールバック（従来のメインスレッド逐次デコード） ===
+  // === フォールバック（メインスレッド逐次デコード） ===
   const dets=[];
   if(!isMultiMode()){
     ctx.drawImage(v,0,0,w,h);
@@ -1152,7 +1234,6 @@ function handleResult(str, slot){
     proc(camD);
   }
 }
-
 
 /* ====== 変換/入出力 ====== */
 function convert(){
@@ -1251,6 +1332,9 @@ function setMode(to){
   const showOutQR = (mode==='ENC' || mode==='DEC' || mode==='FILE');
   if (el.rowOutputRight) el.rowOutputRight.style.display = showOutQR ? 'flex' : 'none';
 
+  // モード変更に応じてワーカープールも調整
+  scheduleAdjustWorkers(true);
+
   autoResize(el.input); autoResize(el.output);
 }
 
@@ -1314,8 +1398,14 @@ on(el.fpsNum,'change',()=>setFps(el.fpsNum.value));
 
 on(el.btnScanStart,'click',startScan);
 on(el.btnScanStop,'click',stopScan);
-el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
+el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); scheduleAdjustWorkers(true); });
 window.addEventListener('resize',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
+
+/* 行・列の変更でワーカープール再調整 */
+on(el.rows, 'input', ()=>scheduleAdjustWorkers());
+on(el.cols, 'input', ()=>scheduleAdjustWorkers());
+on(el.rows, 'change', ()=>scheduleAdjustWorkers(true));
+on(el.cols, 'change', ()=>scheduleAdjustWorkers(true));
 
 if(navigator.share){ el.btnShare.style.display='inline-flex'; }
 
@@ -1325,7 +1415,6 @@ on(el.logToggle,'change', ()=>{
   el.logPanel.setAttribute('aria-hidden', el.logToggle.checked ? 'false':'true');
   updateLog();
 });
-
 /* ✕ボタン：簡易ログを閉じる（トグルもOFFに） */
 on(el.logClose,'click', ()=>{
   if(el.logToggle){ el.logToggle.checked = false; }

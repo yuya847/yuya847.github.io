@@ -336,9 +336,14 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
         <span id="frame-ind" class="muted">0 / 0</span>
       </div>
       <div class="qr-bottom">
-        <button id="btn-prev" class="btn-surface ripple" data-tip="前のフレーム">⏮</button>
-        <button id="btn-play" class="btn-secondary ripple" data-tip="再生 / 一時停止">▶</button>
-        <button id="btn-next" class="btn-surface ripple" data-tip="次のフレーム">⏭</button>
+      <button id="btn-prev" class="btn-surface ripple" data-tip="前のフレーム">
+  <span class="ms">fast_rewind</span>
+</button>
+<button id="btn-play" class="btn-secondary ripple" data-tip="再生 / 一時停止">▶</button>
+<button id="btn-next" class="btn-surface ripple" data-tip="次のフレーム">
+  <span class="ms">fast_forward</span>
+</button>
+
         <label class="nohdr small" data-tip="ヘッダを付けずに送る（EMR直貼り向け）">
           <input id="no-header" type="checkbox" checked> ヘッダなし（電子カルテ向け）
         </label>
@@ -627,3 +632,4 @@ setMode('ENC');
 </script>
 </body>
 </html>
+

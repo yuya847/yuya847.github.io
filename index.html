@@ -113,19 +113,17 @@ button{cursor:pointer}
 .btn-err{ background:var(--err); color:#fff; border:none }
 .btn-surf{ background:var(--surf); color:#111; border:none }
 button:disabled{opacity:.6;cursor:default}
-.icon-btn{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px }
 
-/* Tooltip */
-[data-tip]{ position:relative }
-[data-tip]:hover::after, [data-tip]:focus-visible::after{
-  content:attr(data-tip); position:absolute; left:50%; transform:translateX(-50%);
-  bottom:calc(100% + 8px); background:rgba(0,0,0,.88); color:#fff; font-size:12px;
-  padding:6px 8px; border-radius:6px; white-space:pre; z-index:1000; pointer-events:none;
+/* ★ アイコンボタン＝丸に統一 */
+.icon-btn{
+  width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:50%; /* ← 角丸→円に */
 }
-[data-tip]:hover::before, [data-tip]:focus-visible::before{
-  content:''; position:absolute; left:50%; transform:translateX(-50%);
-  bottom:calc(100% + 2px); border:6px solid transparent; border-top-color:rgba(0,0,0,.88);
-}
+
+/* ★ 入力/出力ボタン列のフォームからの距離を統一（出力側基準） */
+#input-actions, #row-output-actions, #b2f-row{ margin-top:8px; }
+
+/* リップルなし（既存） */
 
 /* Dropzone */
 .card{border:2px dashed #b0bec5; border-radius:10px; padding:16px; background:#fafafa; text-align:center}
@@ -141,6 +139,9 @@ button:disabled{opacity:.6;cursor:default}
 .fps-wrap{display:flex;align-items:center;gap:6px}
 .fps-wrap input[type="number"]{ width:84px; text-align:right }
 
+/* ★ 再生ボタンだけ1.2倍 */
+#btn-play.icon-btn{ width:48px; height:48px; }
+
 /* カメラ受信 */
 .cam-wrap{display:flex;flex-direction:column;gap:10px}
 .video-box{position:relative}
@@ -148,7 +149,7 @@ video#cam{width:100%;max-height:320px;background:#000;border-radius:8px;display:
 canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .rx-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-/* Help Modal */
+/* Help Modal（既存） */
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:10000}
 .modal.show{display:flex}
 .modal .box{width:min(900px,92vw);max-height:86vh;overflow:auto;background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.2)}
@@ -184,7 +185,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.51</span>
+      <span id="ver" class="badge">ver 1.52</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -194,58 +195,45 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 <div class="container">
 
-  <!-- モード切替 -->
+  <!-- モード切替（※ver1.51と同じ） -->
   <div class="mode">
     <div class="seg" role="tablist" aria-label="mode">
-      <!-- テキスト → B64 -->
       <button id="m-enc" class="sel" role="tab" data-tip="テキスト → Base64">
         <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="lbl">テキスト → Base64</span>
       </button>
-
-      <!-- B64 → テキスト（★右側を text_ad に変更） -->
       <button id="m-dec" role="tab" data-tip="Base64 → テキスト">
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
         <span class="lbl">Base64 → テキスト</span>
       </button>
-
-      <!-- ファイル → B64 -->
       <button id="m-file" role="tab" data-tip="ファイル → Base64">
         <span class="i"><span class="material-symbols-outlined">folder</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="lbl">ファイル → Base64</span>
       </button>
-
-      <!-- B64 → ファイル（★右側を folder=Files に変更し統一） -->
       <button id="m-b2f" role="tab" data-tip="Base64 → ファイル">
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="material-symbols-outlined">folder</span></span>
         <span class="lbl">Base64 → ファイル</span>
       </button>
-
-      <!-- QR → B64 -->
       <button id="m-cam" role="tab" data-tip="QR → Base64">
         <span class="i"><span class="material-symbols-outlined">qr_code_scanner</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="lbl">QR → Base64</span>
       </button>
-
-      <!-- QR → テキスト -->
       <button id="m-camtxt" role="tab" data-tip="QR → テキスト">
         <span class="i"><span class="material-symbols-outlined">qr_code_scanner</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
         <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
         <span class="lbl">QR → テキスト</span>
       </button>
-
-      <!-- QRs → B64 -->
       <button id="m-cam-multi" role="tab" data-tip="QR複数 → Base64">
         <span class="i qr2">
           <span class="material-symbols-outlined a">qr_code_2</span>
@@ -255,8 +243,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="lbl">QR複数 → Base64</span>
       </button>
-
-      <!-- QRs → テキスト -->
       <button id="m-camtxt-multi" role="tab" data-tip="QR複数 → テキスト">
         <span class="i qr2">
           <span class="material-symbols-outlined a">qr_code_2</span>
@@ -284,7 +270,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
       <textarea id="input" placeholder="ここにテキストまたはBase64を入力…"></textarea>
 
-      <!-- FILE: ドロップ（高さ大きめ） -->
       <div id="drop-zone" class="card big" style="display:none;">
         <div>
           <div>ファイルをドラッグ＆ドロップ</div>
@@ -293,7 +278,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <!-- B2F: 保存UI -->
       <div id="b2f-row" class="row" style="display:none; justify-content:space-between; align-items:center;">
         <div class="row" style="gap:8px">
           <button id="btn-paste" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
@@ -323,7 +307,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <!-- 入力操作（テキスト系） -->
       <div id="input-actions" class="row" style="justify-content:space-between;">
         <div class="row">
           <button id="btn-paste-text" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
@@ -353,7 +336,8 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
           <span class="material-symbols-outlined">content_copy</span>
         </button>
         <button id="btn-share" class="icon-btn btn-tonal" data-tip="共有" style="display:none;">
-          <span class="material-symbols-outlined">share</span>
+          <!-- ★ iOSシェアアイコン -->
+          <span class="material-symbols-outlined">ios_share</span>
         </button>
       </div>
     </section>
@@ -430,7 +414,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 </div>
 
-<!-- Help Modal -->
+<!-- Help Modal（既存の内容そのまま） -->
 <div id="help-modal" class="modal" aria-hidden="true">
   <div class="box" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div class="topbar">
@@ -485,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.51', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.52', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -524,9 +508,11 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
 };
 
-/* ====== 説明（ご指定文言） ====== */
+/* ====== 以下、ver1.51 と同じスクリプト（省略なしでそのまま） ====== */
+
+/* 説明 */
 const DESC = {
-  ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。',
+  ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です.',
   DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
   FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。',
   B2F:'Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。',
@@ -536,7 +522,7 @@ const DESC = {
   CAM_TXT_MULTI:'複数のQRコードをテキストとして読み取ることができます。理論的には単一のQRコードより高速でデータを受け取ることができます。'
 };
 
-/* ====== 状態 ====== */
+/* 状態 */
 let mode='ENC';
 const tabState={
   ENC:{in:'',out:''}, DEC:{in:'',out:''}, FILE:{in:'',out:''}, B2F:{in:'',out:''},
@@ -546,7 +532,7 @@ const isCamMode = ()=> /^CAM_/.test(mode);
 const isTextCamMode = ()=> mode==='CAM_TXT' || mode==='CAM_TXT_MULTI';
 const isMultiMode = ()=> mode==='CAM_B64_MULTI' || mode==='CAM_TXT_MULTI';
 
-/* ====== Base64 utils ====== */
+/* Base64 utils */
 function utf8ToB64(str){
   if (window.TextEncoder){
     const bytes = new TextEncoder().encode(str);
@@ -571,7 +557,7 @@ function b64ToUtf8(b64){
   return decodeURIComponent(escape(atob(clean)));
 }
 
-/* ====== QR送出 ====== */
+/* QR送出 */
 const fmt=t=>{const s=Math.max(0,Math.floor(t));const m=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');return `${m}:${ss}`;};
 const checksum=str=>{let s=0;for(let i=0;i<str.length;i++) s=(s+str.charCodeAt(i))&0xffff;return s;};
 const FRAME_RE=/^\[(\d+)\/(\d+)\|(\d+)\]([\s\S]*)$/;
@@ -612,7 +598,7 @@ function buildSequence(){
   return true;
 }
 
-/* ====== 受信（カメラ） ====== */
+/* 受信（カメラ） */
 const rx={ total:0, got:new Map() };
 const rxTxt={ buffer:'' };
 function appendHeaderedAndMaybeComplete(frame){
@@ -764,7 +750,6 @@ function handleResult(str, slot){
     else { camD.curr=''; camD.same=0; }
     return;
   }
-  // ヘッダ無し：安定判定＋TTL
   const proc=(state)=>{
     if(str===state.curr) state.same++; else { state.curr=str; state.same=1; }
     if(state.same>=STABLE_FRAMES){
@@ -782,7 +767,7 @@ function handleResult(str, slot){
   else proc(camD);
 }
 
-/* ====== 変換/入出力 ====== */
+/* 変換/入出力 */
 function convert(){
   const s=el.input?.value.trim(); if(!s){ alert('入力が空です'); return; }
   try{ el.output.value = (mode==='ENC') ? utf8ToB64(s) : b64ToUtf8(s); }
@@ -838,7 +823,7 @@ function autoResize(ta){
   ta.style.height='auto'; ta.style.height = Math.min(600, Math.max(120, ta.scrollHeight))+'px';
 }
 
-/* ====== モード切替 ====== */
+/* モード切替 */
 function setMode(to){
   tabState[mode].in = el.input?.value ?? ''; tabState[mode].out = el.output?.value ?? '';
   mode=to;
@@ -852,28 +837,23 @@ function setMode(to){
   const isFile=(mode==='FILE');
   const isB2F =(mode==='B2F');
 
-  // 入出力表示
   el.panelInput.style.display  = (isText||isFile||isB2F)?'block':'none';
   el.panelOutput.style.display = 'block';
 
-  // 入力テキスト/ドロップ/B2F列
   el.input.style.display       = (isText||mode==='DEC'||mode==='ENC') ? 'block' : (isB2F ? 'block' : 'none');
   el.drop.style.display        = isFile ? 'block' : 'none';
   el.b2fRow.style.display      = isB2F ? 'flex' : 'none';
   el.inputActions.style.display= isText ? 'flex' : (isB2F?'none':'none');
 
-  // 送受信
   el.qrSend.style.display      = (!isCamMode()) ? 'block':'none';
   el.qrRecv.style.display      = isCamMode()    ? 'block':'none';
   if(isCamMode() && el.qrRecv.parentElement!==el.textIO){
-    el.textIO.insertBefore(el.qrRecv, el.panelOutput); // 受信→出力
+    el.textIO.insertBefore(el.qrRecv, el.panelOutput);
   }
 
-  // オプション表示
   el.autoStopWrap.style.display = isTextCamMode() ? 'flex' : 'none';
   el.gridOpts.style.display     = isMultiMode()   ? 'flex' : 'none';
 
-  // 説明
   el.descText.textContent = ({
     ENC:DESC.ENC, DEC:DESC.DEC, FILE:DESC.FILE, B2F:DESC.B2F,
     CAM_B64:DESC.CAM_B64, CAM_TXT:DESC.CAM_TXT,
@@ -883,7 +863,7 @@ function setMode(to){
   autoResize(el.input); autoResize(el.output);
 }
 
-/* ====== イベント ====== */
+/* イベント */
 on(el.mEnc,'click',()=>setMode('ENC'));
 on(el.mDec,'click',()=>setMode('DEC'));
 on(el.mFile,'click',()=>setMode('FILE'));
@@ -906,22 +886,18 @@ on(el.output,'input',()=>autoResize(el.output));
 on(el.btnCopy,'click',copyOut);
 on(el.btnShare,'click',shareOut);
 
-// テキスト系
 on(el.btnPasteText,'click',()=>pasteTo(el.input));
 on(el.btnClearText,'click',()=>{ el.input.value=''; autoResize(el.input); });
 
-// B2F
 on(el.btnPaste,'click',()=>pasteTo(el.input));
 on(el.btnClear,'click',()=>{ el.input.value=''; autoResize(el.input); });
 on(el.btnSave,'click',saveFile);
 
-// ファイル→B64
 on(el.fileBtn,'click',()=>el.fileInput?.click());
 on(el.fileInput,'change',()=>handleFiles(el.fileInput?.files));
 on(el.drop,'dragover',e=>{ e.preventDefault(); });
 on(el.drop,'drop',e=>{ e.preventDefault(); handleFiles(e.dataTransfer?.files); });
 
-// QR送出
 on(el.btnPrev,'click',()=>{ if(idx>0){ idx--; el.scrub.value=idx; renderQR(); updateTime(); }});
 on(el.btnNext,'click',()=>{ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTime(); }});
 on(el.btnPlay,'click',()=>{
@@ -942,16 +918,13 @@ on(el.fps,'input',()=>setFps(el.fps.value));
 on(el.fpsNum,'input',()=>setFps(el.fpsNum.value));
 on(el.fpsNum,'change',()=>setFps(el.fpsNum.value));
 
-// カメラ
 on(el.btnScanStart,'click',startScan);
 on(el.btnScanStop,'click',stopScan);
 el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 window.addEventListener('resize',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 
-// iOS共有
 if(navigator.share){ el.btnShare.style.display='inline-flex'; }
 
-// ヘルプ
 function openHelp(){
   el.helpModal.classList.add('show'); el.helpModal.setAttribute('aria-hidden','false');
   if(el.helpQR && !el.helpQR.dataset.ready && typeof QRCode!=='undefined'){
@@ -965,13 +938,12 @@ on(el.btnHelpClose,'click',closeHelp);
 el.helpModal.addEventListener('click', e=>{ if(e.target===el.helpModal) closeHelp(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeHelp(); });
 
-// 初期化
 setMode('ENC');
 setFps(2);
 autoResize(el.input); autoResize(el.output);
 });
 
-/* ====== トースト ====== */
+/* トースト */
 function toast(msg,bad=false){
   const d=document.createElement('div');
   d.textContent=msg;

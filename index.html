@@ -169,6 +169,75 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 /* 軽めの説明 */
 #mode-desc{ padding:8px 10px !important; }
 #mode-desc .muted{ color:#616161; font-size:13px; }
+
+/* ==== Tooltip (吹き出し) using [data-tip] ==== */
+[data-tip] { position: relative; }
+
+[data-tip]::after{
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px) scale(.98);
+  background: rgba(33,33,33,.95);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: min(260px, 80vw);
+  white-space: normal;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease-out, transform .12s ease-out;
+  z-index: 9999;
+}
+[data-tip]::before{
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 6px solid transparent;
+  border-top-color: rgba(33,33,33,.95);
+  opacity: 0;
+  transition: opacity .12s ease-out, transform .12s ease-out;
+  z-index: 9999;
+}
+/* マウスホバー & キーボード操作でも表示 */
+[data-tip]:hover::after,
+[data-tip]:hover::before,
+[data-tip]:focus-visible::after,
+[data-tip]:focus-visible::before{
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* ==== Hover Motion: 全ボタンを少し拡大＆明るく ==== */
+button, .icon-btn{
+  transition: transform .08s ease-out, filter .15s ease-out, box-shadow .15s ease-out;
+  will-change: transform, filter;
+}
+button:not(:disabled):hover,
+.icon-btn:not(:disabled):hover{
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+/* キーボード操作でも同等のフィードバック */
+button:not(:disabled):focus-visible,
+.icon-btn:not(:disabled):focus-visible{
+  outline: 2px solid var(--sec);
+  outline-offset: 2px;
+  transform: translateY(-1px) scale(1.03);
+}
+/* 既存のセグメントタブのホバーを上書きで拡張 */
+.seg button:hover:not(:disabled){
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.05);
+  box-shadow: 0 2px 8px rgb(0 0 0 / .12);
+}
 </style>
 
 <!-- QR & Scanner -->
@@ -183,7 +252,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.52</span>
+      <span id="ver" class="badge">ver 1.53</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -475,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.52', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.53', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -1001,4 +1070,3 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
-

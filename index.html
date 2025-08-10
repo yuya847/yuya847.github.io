@@ -21,16 +21,14 @@
 
 <style>
 :root{
-  /* Material Design-ish palette */
   --pri:#0d47a1;   /* Primary */
-  --pri-2:#039be5; /* Secondary / Accent */
-  --err:#d32f2f;   /* Error / Stop */
+  --pri-2:#039be5; /* Accent */
+  --err:#d32f2f;   /* Error */
   --surf:#eceff1;  /* Surface */
-  --chip:#81d4fa;  /* Light chip */
+  --chip:#81d4fa;  /* Selected-chip */
   --fg:#1f2937;    /* Text */
-  --muted:#6b7280; /* Muted text */
+  --muted:#6b7280; /* Sub text */
   --br:#dde1e6;    /* Border */
-  --ok:#2e7d32;    /* Success (rarely used) */
 }
 
 *{box-sizing:border-box}
@@ -49,10 +47,8 @@ header{background:var(--pri);color:#fff}
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 16px;gap:12px;
 }
-.title{
-  display:flex;align-items:center;gap:10px;font-weight:700;
-}
-.title img{width:22px;height:22px;display:inline-block}
+.title{display:flex;align-items:center;gap:10px;font-weight:700}
+.title img{width:22px;height:22px}
 .header-actions{display:flex;align-items:center;gap:8px}
 .badge{display:inline-block;background:#13409e;color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid #2a56c6}
 
@@ -63,44 +59,38 @@ header{background:var(--pri);color:#fff}
 .seg{
   display:grid;
   grid-template-columns:repeat(4, minmax(0,1fr));
-  gap:8px;
-  width:100%;
-  border:1px solid var(--br);
-  background:#fff;border-radius:14px;padding:8px;
+  gap:8px;width:100%;
+  border:1px solid var(--br);background:#fff;border-radius:14px;padding:8px;
 }
 .seg button{
   display:flex;align-items:center;justify-content:center;gap:8px;
   width:100%;
-  border:1px solid var(--br);
-  background:#fff; color:var(--fg);
-  border-radius:999px; padding:10px 12px; cursor:pointer;
+  border:1px solid var(--br);background:#fff;color:var(--fg);
+  border-radius:999px;padding:10px 12px;cursor:pointer;
   transition:background .15s ease, box-shadow .15s ease, transform .05s ease;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .seg button:hover{background:#f6f9ff}
 .seg button.sel{background:var(--chip); border-color:#bde7ff}
-.seg .label{display:inline}      /* PC: テキストのみ表示 */
+.seg .label{display:inline}      /* PC: 日本語ラベルのみ */
 .seg .icons{display:none}         /* PC: アイコン非表示 */
 
-/* Mobile = アイコンのみ（丸ボタンの日本語テキストは隠す） */
+/* Mobile = アイコンのみ */
 @media (max-width: 760px){
   .seg{grid-template-columns:repeat(4, minmax(0,1fr))}
   .seg .label{display:none}
   .seg .icons{display:flex}
 }
 
-/* Icon helpers */
+/* Material icon helper */
 .ms{font-family:"Material Symbols Outlined", sans-serif;font-weight:400;font-style:normal;
   font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
-.icon-stack{position:relative;width:22px;height:22px}
-.icon-stack .ms{position:absolute;left:0;top:0;font-size:22px;opacity:.95}
-.icon-stack .ms.top{transform:translate(3px,-3px) scale(.66);opacity:.95}
-.icon-stack .ms.bottom{transform:translate(-3px,3px) scale(.66);opacity:.95}
+
 /* 同サイズ2枚重ね（小さめ） */
 .icon-twins{position:relative;width:22px;height:22px}
-.icon-twins .ms{position:absolute; font-size:16px}
-.icon-twins .ms.a{left:2px; top:2px}
-.icon-twins .ms.b{right:2px; bottom:2px}
+.icon-twins .ms{position:absolute;font-size:16px}
+.icon-twins .ms.a{left:2px;top:2px}
+.icon-twins .ms.b{right:2px;bottom:2px}
 
 /* B64 image icon (mobile 丸ボタン用) */
 .b64-img{width:18px;height:18px;object-fit:contain;display:inline-block}
@@ -111,6 +101,7 @@ header{background:var(--pri);color:#fff}
 .panel{border:1px solid var(--br);border-radius:10px;padding:12px;background:#fff;display:flex;flex-direction:column;gap:10px}
 .panel h2{margin:0;font-size:15px}
 textarea{width:100%;min-height:240px;resize:vertical;font-size:15px;line-height:1.5;padding:10px;border:1px solid #cfd4da;border-radius:8px}
+textarea.autosize{overflow:hidden} /* 自動リサイズ用 */
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row.split{justify-content:space-between;gap:12px}
 .row.right{justify-content:flex-end}
@@ -127,20 +118,21 @@ button{cursor:pointer}
 button:hover:not(:disabled){filter:brightness(0.98)}
 button:active:not(:disabled){transform:translateY(1px)}
 button:disabled{opacity:.6;cursor:default}
-
-/* Icon-only action buttons */
 .btn-icon{padding:8px;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
 
-/* Tooltip (speech bubble) */
-[data-tip]{
-  position:relative;
-}
+/* 小さなショートカット表示 */
+.kbd{background:#f3f5f8;border:1px solid #dfe3e8;border-bottom-width:2px;border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.kbd.small{font-size:12px}
+.hint-wrap{display:flex;align-items:center;gap:6px}
+
+/* Tooltip */
+[data-tip]{position:relative}
 [data-tip]::after{
   content:attr(data-tip);
-  position:absolute;left:50%;transform:translate(-50%,-6px);
-  bottom:100%;
+  position:absolute;left:50%;transform:translate(-50%,-6px);bottom:100%;
   background:#111;color:#fff;font-size:12px;padding:6px 8px;border-radius:6px;
-  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s ease; box-shadow:0 4px 12px rgba(0,0,0,.18)
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s ease;
+  box-shadow:0 4px 12px rgba(0,0,0,.18)
 }
 [data-tip]::before{
   content:""; position:absolute; left:50%; bottom:100%; transform:translate(-50%,6px);
@@ -170,12 +162,8 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
 .modal .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--br)}
 .modal h3{margin:8px 0 6px}
 .modal ul{margin:6px 0 6px 1.2em;padding:0}
-.kbd{background:#f3f5f8;border:1px solid #dfe3e8;border-bottom-width:2px;border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
 
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce){
-  *{transition:none !important;animation:none !important}
-}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
 </style>
 </head>
 
@@ -187,93 +175,71 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
       <span>テキストQRコード変換</span>
     </div>
     <div class="header-actions">
-      <span id="ver" class="badge" title="バージョン">ver 1.6</span>
-      <button id="btn-help" class="btn-secondary" data-tip="ヘルプ">ヘルプ</button>
+      <span id="ver" class="badge" title="バージョン">ver 1.7</span>
+      <div class="hint-wrap">
+        <button id="btn-help" class="btn-secondary" data-tip="ヘルプ（?）">ヘルプ</button>
+        <span class="kbd small">?</span>
+      </div>
     </div>
   </div>
 </header>
 
 <div class="container">
 
-  <!-- 丸ボタン（PC: 日本語テキストのみ／スマホ: アイコンのみ） -->
+  <!-- 丸ボタン（PC: 日本語ラベル／スマホ: アイコンのみ） -->
   <div class="mode">
     <div class="seg" role="tablist" aria-label="mode">
-      <!-- テキスト→Base64 -->
       <button id="m-enc" class="sel" role="tab" aria-label="テキストからBase64へ">
         <span class="label">テキスト → Base64</span>
         <span class="icons" aria-hidden="true">
-          <span class="ms">text_ad</span>
-          <span class="ms">arrow_forward</span>
+          <span class="ms">text_ad</span><span class="ms">arrow_forward</span>
           <img src="./B64.png" class="b64-img" alt="B64">
         </span>
       </button>
-      <!-- Base64→テキスト -->
       <button id="m-dec" role="tab" aria-label="Base64からテキストへ">
         <span class="label">Base64 → テキスト</span>
         <span class="icons" aria-hidden="true">
-          <img src="./B64.png" class="b64-img" alt="B64">
-          <span class="ms">arrow_forward</span>
-          <span class="ms">text_ad</span>
+          <img src="./B64.png" class="b64-img" alt="B64"><span class="ms">arrow_forward</span><span class="ms">text_ad</span>
         </span>
       </button>
-      <!-- ファイル→Base64 -->
       <button id="m-file" role="tab" aria-label="ファイルからBase64へ">
         <span class="label">ファイル → Base64</span>
         <span class="icons" aria-hidden="true">
-          <span class="ms">folder</span>
-          <span class="ms">arrow_forward</span>
+          <span class="ms">folder</span><span class="ms">arrow_forward</span>
           <img src="./B64.png" class="b64-img" alt="B64">
         </span>
       </button>
-      <!-- Base64→ファイル -->
       <button id="m-b2f" role="tab" aria-label="Base64からファイルへ">
         <span class="label">Base64 → ファイル</span>
         <span class="icons" aria-hidden="true">
-          <img src="./B64.png" class="b64-img" alt="B64">
-          <span class="ms">arrow_forward</span>
-          <span class="ms">folder</span>
+          <img src="./B64.png" class="b64-img" alt="B64"><span class="ms">arrow_forward</span><span class="ms">folder</span>
         </span>
       </button>
-      <!-- QR→Base64 -->
       <button id="m-cam" role="tab" aria-label="QRからBase64へ">
         <span class="label">QR → Base64</span>
         <span class="icons" aria-hidden="true">
-          <span class="ms">qr_code_2</span>
-          <span class="ms">arrow_forward</span>
+          <span class="ms">qr_code_2</span><span class="ms">arrow_forward</span>
           <img src="./B64.png" class="b64-img" alt="B64">
         </span>
       </button>
-      <!-- QR→テキスト -->
       <button id="m-camtxt" role="tab" aria-label="QRからテキストへ">
         <span class="label">QR → テキスト</span>
         <span class="icons" aria-hidden="true">
-          <span class="ms">qr_code_2</span>
-          <span class="ms">arrow_forward</span>
-          <span class="ms">text_ad</span>
+          <span class="ms">qr_code_2</span><span class="ms">arrow_forward</span><span class="ms">text_ad</span>
         </span>
       </button>
-      <!-- QRs→Base64（同サイズ二枚重ね・小さめ） -->
       <button id="m-cam-multi" role="tab" aria-label="複数QRからBase64へ">
         <span class="label">QR複数 → Base64</span>
         <span class="icons" aria-hidden="true">
-          <span class="icon-twins" aria-hidden="true">
-            <span class="ms a">qr_code_2</span>
-            <span class="ms b">qr_code_2</span>
-          </span>
-          <span class="ms">arrow_forward</span>
-          <img src="./B64.png" class="b64-img" alt="B64">
+          <span class="icon-twins"><span class="ms a">qr_code_2</span><span class="ms b">qr_code_2</span></span>
+          <span class="ms">arrow_forward</span><img src="./B64.png" class="b64-img" alt="B64">
         </span>
       </button>
-      <!-- QRs→テキスト -->
       <button id="m-camtxt-multi" role="tab" aria-label="複数QRからテキストへ">
         <span class="label">QR複数 → テキスト</span>
         <span class="icons" aria-hidden="true">
-          <span class="icon-twins" aria-hidden="true">
-            <span class="ms a">qr_code_2</span>
-            <span class="ms b">qr_code_2</span>
-          </span>
-          <span class="ms">arrow_forward</span>
-          <span class="ms">text_ad</span>
+          <span class="icon-twins"><span class="ms a">qr_code_2</span><span class="ms b">qr_code_2</span></span>
+          <span class="ms">arrow_forward</span><span class="ms">text_ad</span>
         </span>
       </button>
     </div>
@@ -284,12 +250,12 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
     <div id="desc-text" style="font-size:13.5px;color:#374151"></div>
   </div>
 
-  <!-- 入出力 -->
+  <!-- 入出力（通常時：入力＋出力 / QR時：QR入力＋出力） -->
   <div class="grid" id="text-io">
-    <!-- 入力 -->
+    <!-- 入力 or 非表示（QR時） -->
     <section class="panel" id="panel-input">
       <h2>入力</h2>
-      <textarea id="input" placeholder="ここにテキストまたはBase64を入力…"></textarea>
+      <textarea id="input" class="autosize" placeholder="ここにテキストまたはBase64を入力…"></textarea>
 
       <!-- ファイル→B64 のときだけ -->
       <div id="drop-zone" class="panel" style="border-style:dashed;display:none;padding:16px">
@@ -305,7 +271,7 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
         <input id="file-input" type="file" style="display:none"/>
       </div>
 
-      <!-- B64→ファイル 用：左＝ペースト＆クリア、右＝形式/名前/保存 -->
+      <!-- B64→ファイル 用 -->
       <div id="b2f-rows" class="row split" style="display:none">
         <div class="row">
           <button id="btn-paste" class="btn-icon btn-surface" data-tip="クリップボードをペースト">
@@ -336,12 +302,20 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
         </div>
       </div>
 
-      <!-- テキスト↔B64 用：アイコンのみアクション -->
+      <!-- テキスト↔B64 の操作 -->
       <div id="text-actions" class="row right">
-        <button id="btn-conv-qr" class="btn-primary" data-tip="変換＋QRを表示（Shift+Enter）">
-          変換＋QRを表示（Shift+Enter）
-        </button>
-        <button id="btn-convert" class="btn-secondary" data-tip="変換（Ctrl+Enter）">変換（Ctrl+Enter）</button>
+        <div class="hint-wrap">
+          <button id="btn-conv-qr" class="btn-primary btn-icon" data-tip="変換＋QRを表示（Shift+Enter）">
+            <span class="ms">qr_code_2</span>
+          </button>
+          <span class="kbd small">Shift+Enter</span>
+        </div>
+        <div class="hint-wrap">
+          <button id="btn-convert" class="btn-secondary btn-icon" data-tip="変換（Ctrl/⌘+Enter）">
+            <span class="ms">convert_to_text</span>
+          </button>
+          <span class="kbd small">Ctrl/⌘+Enter</span>
+        </div>
         <button id="btn-clear-plain" class="btn-icon btn-danger" data-tip="クリア">
           <span class="ms">delete</span>
         </button>
@@ -351,13 +325,16 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
       </div>
     </section>
 
-    <!-- 出力 -->
+    <!-- 出力（QR時も右 / モバイルは下） -->
     <section class="panel" id="panel-output">
       <h2>出力</h2>
       <textarea id="output" placeholder="ここに結果が表示されます"></textarea>
       <div class="row right">
         <button id="btn-copy" class="btn-icon btn-surface" data-tip="コピー">
           <span class="ms">content_copy</span>
+        </button>
+        <button id="btn-share" class="btn-icon btn-secondary" data-tip="共有（他のアプリへ）">
+          <span class="ms">ios_share</span>
         </button>
         <button id="btn-qrshow" class="btn-secondary" data-tip="QR表示（連続）">QR表示（連続）</button>
       </div>
@@ -380,9 +357,9 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
       <button id="btn-next" class="btn-surface" data-tip="次のフレーム"><span class="ms">fast_forward</span></button>
       <div class="fps-wrap">
         <label>速度(FPS)
-          <input id="fps" type="range" min="0.5" max="120" step="0.1" value="1.0"/>
+          <input id="fps" type="range" min="0.5" max="120" step="0.1" value="2.0"/>
         </label>
-        <input id="fps-num" type="number" min="0.5" max="120" step="0.1" value="1.0"/>
+        <input id="fps-num" type="number" min="0.5" max="120" step="0.1" value="2.0"/>
       </div>
       <label style="display:flex;align-items:center;gap:6px">
         <input id="no-header" type="checkbox" checked> ヘッダなし（電子カルテ向け）
@@ -390,14 +367,14 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
     </div>
   </section>
 
-  <!-- QR 入力 -->
+  <!-- QR 入力（カメラ） -->
   <section class="panel" id="qr-recv" style="display:none;">
     <h2>QR入力</h2>
     <div class="row" style="gap:10px">
-      <button id="btn-scan-start" class="btn-primary" data-tip="カメラ開始">
+      <button id="btn-scan-start" class="btn-primary btn-icon" data-tip="カメラ開始">
         <span class="ms">qr_code_scanner</span>
       </button>
-      <button id="btn-scan-stop" class="btn-danger" data-tip="停止">
+      <button id="btn-scan-stop" class="btn-danger btn-icon" data-tip="停止">
         <span class="ms">stop</span>
       </button>
 
@@ -409,16 +386,13 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
             <input id="auto-stop-hl" type="checkbox">
             ヘッダなしは1枚読んだら自動停止（QR→テキスト）
           </label>
-          <span class="rx-note">／複数読み取りは下のグリッド設定を使用</span>
+        </div>
+        <div class="row" id="grid-opts">
+          <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
+          <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
+          <label>ROI余白(px): <input id="roi-margin" type="number" min="0" max="80" value="16"></label>
         </div>
       </details>
-    </div>
-
-    <!-- 複数ROI設定 -->
-    <div class="row" id="grid-opts" style="display:none">
-      <label>行: <input id="rows" type="number" min="1" max="6" value="2"></label>
-      <label>列: <input id="cols" type="number" min="1" max="6" value="2"></label>
-      <label>ROI余白(px): <input id="roi-margin" type="number" min="0" max="80" value="16"></label>
     </div>
 
     <div class="video-box">
@@ -446,18 +420,18 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
     <div class="content" style="font-size:14.5px">
       <h3>モードの説明</h3>
       <ul>
-        <li><b>テキスト → Base64</b>：文章を Base64 という文字列に変換します。Base64 を介して QR コードに変換可能です。電子カルテにスマホのメモを入れたい時に便利。</li>
-        <li><b>Base64 → テキスト</b>：Base64（電子カルテから送られてくる文字列）をテキストに変換します。</li>
-        <li><b>ファイル → Base64</b>：あらゆるファイルを Base64 にします。QR 化して電子カルテへ画像や PDF、Excel などを入力可能。</li>
-        <li><b>Base64 → ファイル</b>：Base64 からファイルへ復元します（mp4 ほか各種対応）。</li>
-        <li><b>QR → Base64</b>：QR コードを Base64 の形で受信します。</li>
-        <li><b>QR → テキスト</b>：QR コードから直接テキストに変換します。</li>
-        <li><b>QR複数 → Base64</b>：複数 QR を同時に読み取り、Base64 として受信します。</li>
-        <li><b>QR複数 → テキスト</b>：複数 QR を同時に読み取り、テキストとして受信します。</li>
+        <li><b>テキスト → Base64</b>：文章を Base64 に変換します。QR にもできます。</li>
+        <li><b>Base64 → テキスト</b>：Base64 をテキストへ復号します。</li>
+        <li><b>ファイル → Base64</b>：あらゆるファイルを Base64 にします（画像 / PDF / Office など）。</li>
+        <li><b>Base64 → ファイル</b>：Base64 からファイルへ復元します（mp4 対応）。</li>
+        <li><b>QR → Base64</b>：カメラで QR を読み取り、Base64 として受信します。</li>
+        <li><b>QR → テキスト</b>：カメラで QR を読み取り、テキストとして受信します。</li>
+        <li><b>QR複数 → Base64</b>：映像をグリッド分割して複数 QR を同時に Base64 として受信します。</li>
+        <li><b>QR複数 → テキスト</b>：映像をグリッド分割して複数 QR を同時に テキストとして受信します。</li>
       </ul>
 
       <h3>バージョン</h3>
-      <div id="about-version" style="color:var(--muted)">ver 1.6</div>
+      <div id="about-version" style="color:var(--muted)">ver 1.7</div>
     </div>
   </div>
 </div>
@@ -467,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== Version / description ====== */
-const APP_VERSION = 'ver 1.6';
+const APP_VERSION = 'ver 1.7';
 const APP_BUILD   = '2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
@@ -489,7 +463,7 @@ const el = {
   filename: $('filename'), filetype: $('filetype'),
   btnPaste: $('btn-paste'), btnClear: $('btn-clear'),
   btnPastePlain: $('btn-paste-plain'), btnClearPlain: $('btn-clear-plain'),
-  btnCopy: $('btn-copy'), btnQR: $('btn-qrshow'), btnSave: $('btn-save'),
+  btnCopy: $('btn-copy'), btnShare: $('btn-share'), btnQR: $('btn-qrshow'), btnSave: $('btn-save'),
   btnConvQR: $('btn-conv-qr'), btnConv: $('btn-convert'),
   textActions: $('text-actions'), b2fRows: $('b2f-rows'),
   // send
@@ -501,13 +475,10 @@ const el = {
   qrRecv: $('qr-recv'), cam: $('cam'), camCanvas: $('cam-canvas'), camOverlay: $('cam-overlay'),
   btnScanStart: $('btn-scan-start'), btnScanStop: $('btn-scan-stop'),
   rxStatus: $('rx-status'), autoStopHL: $('auto-stop-hl'),
-  gridOpts: $('grid-opts'), rows: $('rows'), cols: $('cols'), roiMargin: $('roi-margin'),
+  rows: $('rows'), cols: $('cols'), roiMargin: $('roi-margin'),
   // misc
   modeDesc: $('mode-desc'), descText: $('desc-text'),
-  help: {
-    modal: $('help-modal'), btnOpen: $('btn-help'), btnClose: $('btn-help-close'),
-    about: $('about-version'),
-  }
+  help: { modal: $('help-modal'), btnOpen: $('btn-help'), btnClose: $('btn-help-close'), about: $('about-version') }
 };
 el.help.about.textContent = `${APP_VERSION}（ビルド: ${APP_BUILD}）`;
 
@@ -523,14 +494,32 @@ const DESC = {
   B2F:  'Base64 からファイルへ復元します（mp4 対応）。',
   CAM_B64: 'カメラで QR を読み取り Base64 として受信します。',
   CAM_TXT: 'カメラで QR を読み取り テキストとして受信します。',
-  CAM_B64_MULTI: '映像をグリッド分割して複数 QR を同時に Base64 として受信します。',
-  CAM_TXT_MULTI: '映像をグリッド分割して複数 QR を同時に テキストとして受信します。'
+  CAM_B64_MULTI: 'グリッド分割で複数 QR を同時に Base64 受信します。',
+  CAM_TXT_MULTI: 'グリッド分割で複数 QR を同時に テキスト受信します。'
 };
 function setDesc(key){ el.descText.textContent = DESC[key] || ''; }
 
 const isCamMode = () => /^CAM_/.test(mode);
 const isMultiMode = () => (mode==='CAM_B64_MULTI' || mode==='CAM_TXT_MULTI');
 const isTextCamMode = () => (mode==='CAM_TXT' || mode==='CAM_TXT_MULTI');
+
+/* 入力テキストエリアの自動リサイズ */
+function autosize(ta, min=160){
+  if (!ta) return;
+  ta.style.height = 'auto';
+  const h = Math.max(min, ta.scrollHeight);
+  ta.style.height = h + 'px';
+}
+
+/* カメラモード時の並びを：QR入力 → 出力 に強制 */
+function placeCamPanels(){
+  const c = el.textIO;
+  if (!isCamMode()) return;
+  if (el.qrRecv.parentElement !== c) c.appendChild(el.qrRecv);
+  c.insertAdjacentElement('afterbegin', el.qrRecv);   // 先頭へ（左/上）
+  if (el.panelOutput.parentElement !== c) c.appendChild(el.panelOutput);
+  // 出力は最後にしておく（右/下）
+}
 
 function setMode(to){
   tabState[mode].in  = el.input?.value ?? '';
@@ -550,32 +539,24 @@ function setMode(to){
   el.panelInput.style.display  = (isText||isFile||isB2F)?'block':'none';
   el.panelOutput.style.display = isB2F ? 'none' : 'block';
 
-  // input widgets
   el.input.style.display       = (isText||isB2F)?'block':'none';
   el.drop.style.display        = isFile?'block':'none';
 
-  // actions visibility
   el.textActions.style.display = isText ? 'flex' : 'none';
   el.b2fRows.style.display     = isB2F ? 'flex' : 'none';
 
-  // show/hide QR sender
   el.qrSend.style.display      = (!isCamMode() && !isB2F) ? 'block' : 'none';
   el.qrRecv.style.display      = isCamMode() ? 'block' : 'none';
-  if (isCamMode() && el.qrRecv.parentElement !== el.textIO)
-    el.textIO.insertBefore(el.qrRecv, el.panelOutput);
+  if (isCamMode()) placeCamPanels();
 
-  // options
-  el.gridOpts.style.display = isMultiMode() ? 'flex' : 'none';
-
-  // placeholders
   el.output.placeholder = isFile ? 'ここにBase64が表示されます'
     : (mode==='DEC'||isTextCamMode()) ? 'ここにテキストが表示されます'
     : 'ここに結果が表示されます';
 
   setDesc(mode);
   drawOverlayGrid();
+  autosize(el.input); // 入力の自動リサイズ初期化
 }
-setDesc('ENC');
 
 /* ====== Base64 utils ====== */
 function utf8ToB64(str){
@@ -600,26 +581,26 @@ function b64ToUtf8(b64){
   } else { return decodeURIComponent(escape(atob(clean))); }
 }
 
-/* ====== Convert / Copy / Paste / Save ====== */
+/* ====== Convert / Copy / Paste / Share / Save ====== */
 function convert(){
   const s=el.input?.value.trim(); if(!s){ alert('入力が空です'); return; }
   try{ el.output.value = (mode==='ENC') ? utf8ToB64(s) : b64ToUtf8(s); }
   catch(e){ alert('変換に失敗: '+e.message+'\n\n※Base64は改行/URL-safe可、data:ヘッダは自動除去'); }
 }
-function convertAndQR(){
-  convert();
-  if (buildSequence()){ pause(); renderQR(); }
-}
-async function copyOut(){
-  const s=el.output?.value; if(!s) return;
-  try{ await navigator.clipboard.writeText(s); }catch(_){}
+function convertAndQR(){ convert(); if (buildSequence()){ pause(); renderQR(); } }
+async function copyOut(){ const s=el.output?.value; if(!s) return; try{ await navigator.clipboard.writeText(s); }catch(_){} }
+async function shareOut(){
+  const s = el.output?.value.trim();
+  if(!s) return;
+  if (navigator.share){
+    try{ await navigator.share({text:s}); }catch(_){}
+  }else{
+    try{ await navigator.clipboard.writeText(s); alert('共有に未対応のためコピーしました'); }catch(_){ alert('このブラウザは共有に未対応です'); }
+  }
 }
 async function pasteIn(target){
-  try{
-    const t = await navigator.clipboard.readText();
-    if(!t) return;
-    target.value = t;
-  }catch(_){}
+  try{ const t = await navigator.clipboard.readText(); if(!t) return; target.value = t; autosize(target); }
+  catch(_){}
 }
 function handleFiles(files){
   if(!files||!files.length) return;
@@ -651,7 +632,7 @@ function saveFile(){
 const checksum = str => { let s=0; for(let i=0;i<str.length;i++) s=(s+str.charCodeAt(i))&0xffff; return s; };
 const FRAME_RE=/^\[(\d+)\/(\d+)\|(\d+)\]([\s\S]*)$/;
 
-let qrChunks=[], idx=0, playing=false, timer=null, fpsRate=1.0;
+let qrChunks=[], idx=0, playing=false, timer=null, fpsRate=2.0;
 
 function splitFrames(text, maxPayload){
   const total=Math.ceil(text.length/maxPayload)||1, frames=[];
@@ -683,7 +664,7 @@ function prev(){ if(idx>0){ idx--; el.scrub.value=idx; renderQR(); updateTimeLab
 function next(){ if(idx<qrChunks.length-1){ idx++; el.scrub.value=idx; renderQR(); updateTimeLabels(); updateFrameInd(); } }
 function setFps(val){
   const min=0.5, max=120;
-  let v=parseFloat(val); if(isNaN(v)) v=1.0;
+  let v=parseFloat(val); if(isNaN(v)) v=2.0;
   v=Math.min(max, Math.max(min, v));
   fpsRate=v;
   if (el.fps) el.fps.value = String(v);
@@ -855,6 +836,7 @@ function handleQrResult(str, slot){
     if (str===currObj.curr) currObj.same++; else { currObj.curr=str; currObj.same=1; }
     if (currObj.same>=STABLE_FRAMES){
       const h=fp32(str), now=Date.now(), last=seenHashes.get(h)||0;
+      if (now-last>DEDUUPE_TTL_MS){} // guard typo prevention (no-op)
       if (now-last>DEDUPE_TTL_MS){
         if (isTextCamMode()){
           ingestFrameToText(str);
@@ -885,10 +867,12 @@ on(el.input,'keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ convert(); }
   if(e.shiftKey && e.key==='Enter'){ e.preventDefault(); convertAndQR(); }
 });
-on(el.btnClearPlain,'click',()=>{ el.input.value=''; el.input.focus(); });
+on(el.input,'input',()=>autosize(el.input));
+on(el.btnClearPlain,'click',()=>{ el.input.value=''; autosize(el.input); el.input.focus(); });
 on(el.btnPastePlain,'click',()=> pasteIn(el.input));
 
 on(el.btnCopy,'click',copyOut);
+on(el.btnShare,'click',shareOut);
 on(el.btnQR,'click',()=>{ if(buildSequence()){ pause(); renderQR(); } });
 
 on(el.fps,'input',()=> setFps(el.fps.value));
@@ -906,32 +890,39 @@ on(el.drop,'dragover',e=>{ e.preventDefault(); });
 on(el.drop,'drop',e=>{ e.preventDefault(); handleFiles(e.dataTransfer?.files); });
 
 on(el.btnSave,'click',saveFile);
-on(el.btnClear,'click',()=>{ el.input.value=''; el.input.focus(); });
+on(el.btnClear,'click',()=>{ el.input.value=''; autosize(el.input); el.input.focus(); });
 on(el.btnPaste,'click',()=> pasteIn(el.input));
 
 on(el.btnScanStart,'click',startScan);
 on(el.btnScanStop,'click',stopScan);
 
-// resize overlay
+// overlay sizing
 el.cam.addEventListener('loadedmetadata', ()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 window.addEventListener('resize', ()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 
-// grid change
+// grid setting change
 ['change','input'].forEach(ev=>{
   on(el.rows,ev,drawOverlayGrid);
   on(el.cols,ev,drawOverlayGrid);
   on(el.roiMargin,ev,drawOverlayGrid);
 });
 
-/* ====== Help modal ====== */
+/* ====== Help modal + shortcuts ====== */
 const help = el.help;
 on(help.btnOpen,'click',()=>{ help.modal.classList.add('show'); help.modal.setAttribute('aria-hidden','false'); });
 on(help.btnClose,'click',()=>{ help.modal.classList.remove('show'); help.modal.setAttribute('aria-hidden','true'); });
-help.modal.addEventListener('click', (e)=>{ if(e.target===help.modal){ help.modal.classList.remove('show'); help.modal.setAttribute('aria-hidden','true'); } });
+
+// キーボードショートカット：? でヘルプ
+document.addEventListener('keydown', (e)=>{
+  if ((e.shiftKey && e.key === '/') || e.key === '?'){
+    help.modal.classList.add('show'); help.modal.setAttribute('aria-hidden','false');
+  }
+});
 
 /* init */
 setMode('ENC');
-setFps(el.fps.value);
+setFps(el.fps.value);           // 初期FPS=2.0
+autosize(el.input);             // 入力テキスト自動リサイズ初期反映
 });
 </script>
 </body>

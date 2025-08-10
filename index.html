@@ -560,7 +560,7 @@ function appendHeaderedAndMaybeComplete(frame){
   if (rx.got.size===rx.total){
     const parts=[]; for(let k=1;k<=rx.total;k++){ const p=rx.got.get(k); if(typeof p!=='string'){ toast(`欠落: ${k}`,true); return {matched:true,ok:false}; } parts.push(p); }
     const joined=parts.join(''); rx.total=0; rx.got.clear(); if(el.rxStatus) el.rxStatus.textContent='0/0';
-    return {matched:true,ok:true,complete,true,payload:joined};
+    return {matched:true,ok:true,complete:true,payload:joined};
   }
   return {matched:true,ok:true,complete:false};
 }
@@ -865,3 +865,4 @@ syncOutputHeight();
 </script>
 </body>
 </html>
+

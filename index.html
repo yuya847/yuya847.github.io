@@ -10,21 +10,15 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180">
 <meta name="theme-color" content="#0d47a1">
 
-<!-- Material Symbols: 正式推奨の読み込み。icon_names は使わない -->
+<!-- Material Symbols -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
 
 <style>
-/* ===== Theme / Base ===== */
 :root{
   --fg:#222; --bg:#fff; --muted:#666; --br:#e0e0e0;
-  /* Material color picks */
-  --pri:#0d47a1;   /* 濃紺 Primary */
-  --sec:#039be5;   /* アクセント */
-  --tone:#81d4fa;  /* トーナル */
-  --err:#d32f2f;   /* エラー */
-  --surf:#eceff1;  /* サーフェス */
+  --pri:#0d47a1; --sec:#039be5; --tone:#81d4fa; --err:#d32f2f; --surf:#eceff1;
 }
 html,body{height:100%}
 body{
@@ -33,28 +27,25 @@ body{
   display:flex; flex-direction:column;
 }
 
-/* Material Symbols (推奨クラス) */
+/* Material Symbols */
 .material-symbols-outlined{
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal; font-style: normal; font-size:24px; line-height:1;
-  display:inline-block; white-space:nowrap; -webkit-font-smoothing:antialiased;
+  font-family:'Material Symbols Outlined';
+  font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;
+  font-weight:normal; font-style:normal; line-height:1; display:inline-block;
+  -webkit-font-smoothing:antialiased; font-size:22px;
 }
-/* 互換：以前の .ms でも動くように */
-.ms{ all:unset; font-family:'Material Symbols Outlined'; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; font-size:24px; line-height:1; display:inline-block }
-
-.badge{display:inline-block;background:#444;color:#fff;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #666}
 
 /* Header */
 header{background:#2d2d2d;color:#fff;padding:10px 14px}
 header .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 header h1{margin:0;font-size:16px;display:flex;align-items:center;gap:8px}
 header h1 img{width:20px;height:20px;display:block}
+.badge{display:inline-block;background:#444;color:#fff;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #666}
 
 /* Container */
 .container{padding:12px;display:flex;flex-direction:column;gap:12px}
 
-/* ===== モード切替（丸ボタン） ===== */
+/* === Segmented tabs === */
 .mode{display:flex;flex-wrap:wrap}
 .seg{
   display:flex; flex-wrap:wrap; gap:8px;
@@ -66,29 +57,40 @@ header h1 img{width:20px;height:20px;display:block}
   padding:8px 12px; border:1px solid var(--br); border-radius:999px;
   background:#fff; color:#222; cursor:pointer; white-space:nowrap;
   transition:background-color .15s, transform .06s, box-shadow .15s, filter .15s;
+  min-width:0;
 }
 .seg button.sel{ background:#e3e6ed; font-weight:700; }
 .seg button:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 2px 8px rgb(0 0 0 / .12); }
-.seg .lbl{ font-size:14px }
-.seg .material-symbols-outlined{ font-size:20px }
-.seg .b64-mark{ font-weight:700; letter-spacing:.3px; }
 
-/* PC（広い時）は日本語だけ表示 */
+.seg .lbl{ font-size:14px }              /* PCで表示する日本語 */
+.seg .i{ display:inline-flex; align-items:center; }  /* モバイル用のアイコン塊 */
+.seg .arrow{ font-size:16px; opacity:.75; margin:0 -2px } /* 小さめ矢印 */
+.seg .b64-mark{ font-weight:700; letter-spacing:.3px; font-size:12px; }
+
+/* QR 複数：同サイズ2枚重ね（小さめ） */
+.qr2{ position:relative; width:20px; height:20px; }
+.qr2 .material-symbols-outlined{ font-size:14px !important; position:absolute; }
+.qr2 .a{ left:-1px; top:-1px; }
+.qr2 .b{ left:7px; top:7px; }
+
+/* PC（広い時）＝日本語ラベルのみ表示 */
 @media(min-width:901px){
-  .seg .material-symbols-outlined, .seg .b64-mark{ display:none }
+  .seg .i, .seg .arrow, .seg .b64-mark{ display:none }
+  .seg .lbl{ display:inline }
 }
 
-/* スマホ：4列・アイコンのみ・小さく */
+/* スマホ：4列・アイコン＋矢印のみ表示（小さくして収まる） */
 @media(max-width:640px){
   .seg{
     display:grid;
     grid-template-columns:repeat(4, minmax(0,1fr));
     gap:6px; padding:6px; border-radius:12px;
   }
-  .seg button{ padding:8px 6px; justify-content:center; min-height:44px }
+  .seg button{ padding:8px 6px; justify-content:center; min-height:44px; gap:4px }
   .seg .lbl{ display:none }
-  .seg .material-symbols-outlined{ font-size:22px }
-  .seg .b64-mark{ display:inline; font-size:12px }
+  .seg .material-symbols-outlined{ font-size:20px }
+  .seg .arrow{ font-size:16px }
+  .seg .b64-mark{ display:inline; font-size:11px }
 }
 
 /* Panels / Grid */
@@ -111,8 +113,6 @@ button{cursor:pointer}
 .btn-err{ background:var(--err); color:#fff; border:none }
 .btn-surf{ background:var(--surf); color:#111; border:none }
 button:disabled{opacity:.6;cursor:default}
-
-/* Icon buttons */
 .icon-btn{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px }
 
 /* Tooltip */
@@ -166,6 +166,10 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 /* Motion reduce */
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+
+/* ---- 軽めのモード説明 ---- */
+#mode-desc{ padding:8px 10px !important; }
+#mode-desc .muted{ color:#616161; font-size:13px; }
 </style>
 
 <!-- QR & Scanner -->
@@ -180,7 +184,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.4</span>
+      <span id="ver" class="badge">ver 1.5</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -190,49 +194,84 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 <div class="container">
 
-  <!-- モード切替（丸ボタン） -->
+  <!-- モード切替 -->
   <div class="mode">
     <div class="seg" role="tablist" aria-label="mode">
+      <!-- テキスト → B64 -->
       <button id="m-enc" class="sel" role="tab" data-tip="テキスト → Base64">
-        <span class="material-symbols-outlined">text_ad</span><span class="b64-mark">B64</span><span class="lbl">テキスト → Base64</span>
+        <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
+        <span class="lbl">テキスト → Base64</span>
       </button>
+
+      <!-- B64 → テキスト -->
       <button id="m-dec" role="tab" data-tip="Base64 → テキスト">
-        <span class="material-symbols-outlined">convert_to_text</span><span class="lbl">Base64 → テキスト</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="material-symbols-outlined">convert_to_text</span></span>
+        <span class="lbl">Base64 → テキスト</span>
       </button>
+
+      <!-- ファイル → B64 -->
       <button id="m-file" role="tab" data-tip="ファイル → Base64">
-        <span class="material-symbols-outlined">folder</span><span class="b64-mark">B64</span><span class="lbl">ファイル → Base64</span>
+        <span class="i"><span class="material-symbols-outlined">folder</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
+        <span class="lbl">ファイル → Base64</span>
       </button>
+
+      <!-- B64 → ファイル -->
       <button id="m-b2f" role="tab" data-tip="Base64 → ファイル">
-        <span class="material-symbols-outlined">description</span><span class="lbl">Base64 → ファイル</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="material-symbols-outlined">description</span></span>
+        <span class="lbl">Base64 → ファイル</span>
       </button>
+
+      <!-- QR → B64 -->
       <button id="m-cam" role="tab" data-tip="QR → Base64">
-        <span class="material-symbols-outlined">qr_code_scanner</span><span class="b64-mark">B64</span><span class="lbl">QR → Base64</span>
+        <span class="i"><span class="material-symbols-outlined">qr_code_scanner</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
+        <span class="lbl">QR → Base64</span>
       </button>
+
+      <!-- QR → テキスト -->
       <button id="m-camtxt" role="tab" data-tip="QR → テキスト">
-        <span class="material-symbols-outlined">qr_code_scanner</span><span class="lbl">QR → テキスト</span>
+        <span class="i"><span class="material-symbols-outlined">qr_code_scanner</span></span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
+        <span class="lbl">QR → テキスト</span>
       </button>
+
+      <!-- QRs → B64 -->
       <button id="m-cam-multi" role="tab" data-tip="QR複数 → Base64">
-        <!-- 小さめ同サイズで重ね -->
-        <span class="material-symbols-outlined" style="position:relative;width:22px;height:22px">
-          <span class="material-symbols-outlined" style="position:absolute;left:-2px;top:-2px;font-size:16px">qr_code_2</span>
-          <span class="material-symbols-outlined" style="position:absolute;left:6px;top:6px;font-size:16px">qr_code_2</span>
+        <span class="i qr2">
+          <span class="material-symbols-outlined a">qr_code_2</span>
+          <span class="material-symbols-outlined b">qr_code_2</span>
         </span>
-        <span class="b64-mark">B64</span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="b64-mark">B64</span></span>
         <span class="lbl">QR複数 → Base64</span>
       </button>
+
+      <!-- QRs → テキスト -->
       <button id="m-camtxt-multi" role="tab" data-tip="QR複数 → テキスト">
-        <span class="material-symbols-outlined" style="position:relative;width:22px;height:22px">
-          <span class="material-symbols-outlined" style="position:absolute;left:-2px;top:-2px;font-size:16px">qr_code_2</span>
-          <span class="material-symbols-outlined" style="position:absolute;left:6px;top:6px;font-size:16px">qr_code_2</span>
+        <span class="i qr2">
+          <span class="material-symbols-outlined a">qr_code_2</span>
+          <span class="material-symbols-outlined b">qr_code_2</span>
         </span>
+        <span class="arrow material-symbols-outlined">arrow_forward</span>
+        <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
         <span class="lbl">QR複数 → テキスト</span>
       </button>
     </div>
   </div>
 
-  <!-- 簡単なモード説明 -->
-  <div id="mode-desc" class="panel" style="padding:10px">
-    <div id="desc-text">文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときに便利です。</div>
+  <!-- モード説明（控えめ） -->
+  <div id="mode-desc" class="panel" style="padding:8px 10px;">
+    <div id="desc-text" class="muted">文章をBase64という文字列に変換します。QRコード化して電子カルテへ送れます。</div>
   </div>
 
   <!-- 入出力 -->
@@ -241,7 +280,6 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
     <section class="panel" id="panel-input">
       <h2>入力</h2>
 
-      <!-- 入力テキスト -->
       <textarea id="input" placeholder="ここにテキストまたはBase64を入力…"></textarea>
 
       <!-- FILE: ドロップ（高さ大きめ） -->
@@ -253,7 +291,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <!-- B2F: 右寄せの保存UI -->
+      <!-- B2F: 保存UI（右寄せ） -->
       <div id="b2f-row" class="row" style="display:none; justify-content:space-between; align-items:center;">
         <div class="row" style="gap:8px">
           <button id="btn-paste" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
@@ -294,10 +332,10 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
           </button>
         </div>
         <div class="row">
-          <button id="btn-convert" class="icon-btn btn-tonal" data-tip="変換（Ctrl/⌘+Enter）">
+          <button id="btn-convert" class="icon-btn btn-tonal" data-tip="変換">
             <span class="material-symbols-outlined">convert_to_text</span>
           </button>
-          <button id="btn-convert-qr" class="icon-btn btn-sec" data-tip="変換＋QR（Shift+Enter）">
+          <button id="btn-convert-qr" class="icon-btn btn-sec" data-tip="変換＋QR">
             <span class="material-symbols-outlined">qr_code_2</span>
           </button>
         </div>
@@ -390,7 +428,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 </div>
 
-<!-- Help Modal（ver1.4 仕様） -->
+<!-- Help Modal -->
 <div id="help-modal" class="modal" aria-hidden="true">
   <div class="box" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div class="topbar">
@@ -405,21 +443,21 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <div class="sec">
         <h3>概要</h3>
         <ul>
-          <li>テキスト/ファイルをBase64に変換し、QRコードを介して電子カルテへ橋渡しします。</li>
-          <li>QRリーダー（例: DS9308）に向けて連続表示することでデータを送れます。</li>
+          <li>テキスト/ファイルをBase64に変換し、QRコードで電子カルテへ橋渡しします。</li>
+          <li>QRリーダー（例: DS9308）へ連続表示してデータを送ります。</li>
         </ul>
       </div>
 
       <div class="sec">
         <h3>モード</h3>
         <ul id="help-modes">
-          <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換。QR化して送れます。</li>
-          <li><b>Base64 → テキスト</b>：Base64（文字列）を日本語等のテキストへ復元。</li>
-          <li><b>ファイル → Base64</b>：PDF/画像等をBase64化。QRでカルテへ入力。</li>
+          <li><b>テキスト → Base64</b>：文章をBase64に変換し、QR化して送れます。</li>
+          <li><b>Base64 → テキスト</b>：Base64をテキストへ復元します。</li>
+          <li><b>ファイル → Base64</b>：PDF/画像などをBase64化します。</li>
           <li><b>Base64 → ファイル</b>：受け取ったBase64を元のファイルに復元。</li>
           <li><b>QR → Base64</b>：QRをBase64として受信。</li>
           <li><b>QR → テキスト</b>：QRを直接テキストに復元。</li>
-          <li><b>QR複数 → Base64</b>：格子分割で複数のQRを同時にBase64受信。</li>
+          <li><b>QR複数 → Base64</b>：複数のQRを同時にBase64受信。</li>
           <li><b>QR複数 → テキスト</b>：複数のQRを同時にテキスト受信。</li>
         </ul>
       </div>
@@ -445,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.4', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.5', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -457,7 +495,7 @@ const el = {
   mEnc: $('m-enc'), mDec: $('m-dec'), mFile: $('m-file'), mB2F: $('m-b2f'),
   mCamB64: $('m-cam'), mCamTxt: $('m-camtxt'), mCamB64M: $('m-cam-multi'), mCamTxtM: $('m-camtxt-multi'),
   // desc
-  modeDesc: $('mode-desc'), descText: $('desc-text'),
+  descText: $('desc-text'),
   // io
   textIO: $('text-io'), panelInput:$('panel-input'), panelOutput:$('panel-output'),
   input: $('input'), output:$('output'),
@@ -469,7 +507,6 @@ const el = {
   btnConvert:$('btn-convert'), btnConvertQR:$('btn-convert-qr'),
   btnCopy:$('btn-copy'), btnShare:$('btn-share'),
   btnPaste:$('btn-paste'), btnClear:$('btn-clear'), btnSave:$('btn-save'),
-  rowOut:$('row-output-actions'),
   // send
   qrSend:$('qr-send'), qrWrap:$('qr-display'), scrub:$('scrub'),
   elapsed:$('elapsed'), duration:$('duration'), frameInd:$('frame-ind'),
@@ -485,16 +522,16 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
 };
 
-/* ====== 説明 ====== */
+/* ====== 説明（控えめ文言） ====== */
 const DESC = {
-  ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときに便利です。',
-  DEC:'Base64という文字列をテキストへ復元します。電子カルテから受け取ったBase64を日本語に戻したいときに。',
-  FILE:'あらゆるファイルをBase64という文字列に変換します。画像やPDF、ExcelなどをQRで送れます。',
-  B2F:'Base64から元のファイルを復元します。',
+  ENC:'文章をBase64という文字列に変換します。QRコード化して電子カルテへ送れます。',
+  DEC:'Base64をテキストへ復元します。',
+  FILE:'PDF/画像/ExcelなどをBase64に変換します。',
+  B2F:'Base64からファイルを復元します。',
   CAM_B64:'カメラでQRを読み取り、Base64として受信します。',
   CAM_TXT:'カメラでQRを読み取り、テキストとして受信します。',
-  CAM_B64_MULTI:'画面を格子で分割し、複数のQRを同時にBase64受信します。',
-  CAM_TXT_MULTI:'画面を格子で分割し、複数のQRを同時にテキスト受信します。'
+  CAM_B64_MULTI:'複数のQRを同時にBase64受信します。',
+  CAM_TXT_MULTI:'複数のQRを同時にテキスト受信します。'
 };
 
 /* ====== 状態 ====== */
@@ -839,7 +876,7 @@ function setMode(to){
     ENC:DESC.ENC, DEC:DESC.DEC, FILE:DESC.FILE, B2F:DESC.B2F,
     CAM_B64:DESC.CAM_B64, CAM_TXT:DESC.CAM_TXT,
     CAM_B64_MULTI:DESC.CAM_B64_MULTI, CAM_TXT_MULTI:DESC.CAM_TXT_MULTI
-  })[({ENC:'ENC',DEC:'DEC',FILE:'FILE',B2F:'B2F',CAM_B64:'CAM_B64',CAM_TXT:'CAM_TXT',CAM_B64_MULTI:'CAM_B64_MULTI',CAM_TXT_MULTI:'CAM_TXT_MULTI'})[mode]] || '';
+  })[mode] || '';
 
   autoResize(el.input); autoResize(el.output);
 }

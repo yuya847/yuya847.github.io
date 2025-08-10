@@ -62,12 +62,12 @@ header h1 img{width:20px;height:20px;display:block}
 .seg button.sel{ background:#e3e6ed; font-weight:700; }
 .seg button:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 2px 8px rgb(0 0 0 / .12); }
 
-.seg .lbl{ font-size:14px }              /* PCで表示する日本語 */
-.seg .i{ display:inline-flex; align-items:center; }  /* モバイル用のアイコン塊 */
-.seg .arrow{ font-size:16px; opacity:.75; margin:0 -2px } /* 小さめ矢印 */
+.seg .lbl{ font-size:14px }
+.seg .i{ display:inline-flex; align-items:center; }
+.seg .arrow{ font-size:16px; opacity:.75; margin:0 -2px }
 .seg .b64-mark{ font-weight:700; letter-spacing:.3px; font-size:12px; }
 
-/* QR 複数：同サイズ2枚重ね（小さめ） */
+/* QR複数：同サイズ2枚重ね（小さめ） */
 .qr2{ position:relative; width:20px; height:20px; }
 .qr2 .material-symbols-outlined{ font-size:14px !important; position:absolute; }
 .qr2 .a{ left:-1px; top:-1px; }
@@ -184,7 +184,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.5</span>
+      <span id="ver" class="badge">ver 1.51</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -205,11 +205,11 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <span class="lbl">テキスト → Base64</span>
       </button>
 
-      <!-- B64 → テキスト -->
+      <!-- B64 → テキスト（★右側を text_ad に変更） -->
       <button id="m-dec" role="tab" data-tip="Base64 → テキスト">
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
-        <span class="i"><span class="material-symbols-outlined">convert_to_text</span></span>
+        <span class="i"><span class="material-symbols-outlined">text_ad</span></span>
         <span class="lbl">Base64 → テキスト</span>
       </button>
 
@@ -221,11 +221,11 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         <span class="lbl">ファイル → Base64</span>
       </button>
 
-      <!-- B64 → ファイル -->
+      <!-- B64 → ファイル（★右側を folder=Files に変更し統一） -->
       <button id="m-b2f" role="tab" data-tip="Base64 → ファイル">
         <span class="i"><span class="b64-mark">B64</span></span>
         <span class="arrow material-symbols-outlined">arrow_forward</span>
-        <span class="i"><span class="material-symbols-outlined">description</span></span>
+        <span class="i"><span class="material-symbols-outlined">folder</span></span>
         <span class="lbl">Base64 → ファイル</span>
       </button>
 
@@ -271,7 +271,9 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
   <!-- モード説明（控えめ） -->
   <div id="mode-desc" class="panel" style="padding:8px 10px;">
-    <div id="desc-text" class="muted">文章をBase64という文字列に変換します。QRコード化して電子カルテへ送れます。</div>
+    <div id="desc-text" class="muted">
+      文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。
+    </div>
   </div>
 
   <!-- 入出力 -->
@@ -291,7 +293,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
         </div>
       </div>
 
-      <!-- B2F: 保存UI（右寄せ） -->
+      <!-- B2F: 保存UI -->
       <div id="b2f-row" class="row" style="display:none; justify-content:space-between; align-items:center;">
         <div class="row" style="gap:8px">
           <button id="btn-paste" class="icon-btn btn-tonal" data-tip="クリップボードをペースト">
@@ -357,7 +359,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
     </section>
   </div>
 
-  <!-- 送信用QR（テキスト系） -->
+  <!-- 送信用QR -->
   <section class="panel" id="qr-send">
     <h2>QRシーケンス出力</h2>
     <div class="qr-controls">
@@ -451,14 +453,14 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
       <div class="sec">
         <h3>モード</h3>
         <ul id="help-modes">
-          <li><b>テキスト → Base64</b>：文章をBase64に変換し、QR化して送れます。</li>
-          <li><b>Base64 → テキスト</b>：Base64をテキストへ復元します。</li>
-          <li><b>ファイル → Base64</b>：PDF/画像などをBase64化します。</li>
-          <li><b>Base64 → ファイル</b>：受け取ったBase64を元のファイルに復元。</li>
-          <li><b>QR → Base64</b>：QRをBase64として受信。</li>
-          <li><b>QR → テキスト</b>：QRを直接テキストに復元。</li>
-          <li><b>QR複数 → Base64</b>：複数のQRを同時にBase64受信。</li>
-          <li><b>QR複数 → テキスト</b>：複数のQRを同時にテキスト受信。</li>
+          <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。</li>
+          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
+          <li><b>ファイル → Base64</b>：あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。</li>
+          <li><b>Base64 → ファイル</b>：Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。</li>
+          <li><b>QR → Base64</b>：QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。</li>
+          <li><b>QR → テキスト</b>：QRコードから直接テキストに変換できます。電子カルテからファイルをBase64の形で受け取るときには使えません。</li>
+          <li><b>QR複数 → Base64</b>：複数のQRコードをBase64として読み取ることができます。理論的には単一のQRコードより高速でデータを受け取ることができます。</li>
+          <li><b>QR複数 → テキスト</b>：複数のQRコードをテキストとして読み取ることができます。理論的には単一のQRコードより高速でデータを受け取ることができます。</li>
         </ul>
       </div>
 
@@ -483,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.5', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.51', APP_BUILD='2025-08-10';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -522,16 +524,16 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
 };
 
-/* ====== 説明（控えめ文言） ====== */
+/* ====== 説明（ご指定文言） ====== */
 const DESC = {
-  ENC:'文章をBase64という文字列に変換します。QRコード化して電子カルテへ送れます。',
-  DEC:'Base64をテキストへ復元します。',
-  FILE:'PDF/画像/ExcelなどをBase64に変換します。',
-  B2F:'Base64からファイルを復元します。',
-  CAM_B64:'カメラでQRを読み取り、Base64として受信します。',
-  CAM_TXT:'カメラでQRを読み取り、テキストとして受信します。',
-  CAM_B64_MULTI:'複数のQRを同時にBase64受信します。',
-  CAM_TXT_MULTI:'複数のQRを同時にテキスト受信します。'
+  ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。',
+  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
+  FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。',
+  B2F:'Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。',
+  CAM_B64:'QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。',
+  CAM_TXT:'QRコードから直接テキストに変換できます。電子カルテからファイルをBase64の形で受け取るときには使えません。',
+  CAM_B64_MULTI:'複数のQRコードをBase64として読み取ることができます。理論的には単一のQRコードより高速でデータを受け取ることができます。',
+  CAM_TXT_MULTI:'複数のQRコードをテキストとして読み取ることができます。理論的には単一のQRコードより高速でデータを受け取ることができます。'
 };
 
 /* ====== 状態 ====== */
@@ -932,7 +934,9 @@ function setFps(v){
   let val=parseFloat(v); if(isNaN(val)) val=2.0;
   val=Math.max(0.5, Math.min(120, val));
   el.fps.value=String(val); el.fpsNum.value=val.toFixed(1); fpsRate=val; updateTime();
-  if(playing){ playing=false; el.btnPlay.querySelector('.material-symbols-outlined').textContent='play_arrow'; setTimeout(()=>{ playing=true; el.btnPlay.querySelector('.material-symbols-outlined').textContent='pause'; tickPlay(); },0); }
+  if(playing){ playing=false; el.btnPlay.querySelector('.material-symbols-outlined').textContent='play_arrow';
+    setTimeout(()=>{ playing=true; el.btnPlay.querySelector('.material-symbols-outlined').textContent='pause'; tickPlay(); },0);
+  }
 }
 on(el.fps,'input',()=>setFps(el.fps.value));
 on(el.fpsNum,'input',()=>setFps(el.fpsNum.value));

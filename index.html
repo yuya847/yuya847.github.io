@@ -193,33 +193,33 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
         <span class="label">テキスト → Base64</span>
         <span class="icons" aria-hidden="true">
           <span class="ms">text_ad</span><span class="ms">arrow_forward</span>
-          <img src="./B64.png" class="b64-img" alt="B64">
+          <span class="b64-txt">B64</span>
         </span>
       </button>
       <button id="m-dec" role="tab" aria-label="Base64からテキストへ">
         <span class="label">Base64 → テキスト</span>
         <span class="icons" aria-hidden="true">
-          <img src="./B64.png" class="b64-img" alt="B64"><span class="ms">arrow_forward</span><span class="ms">text_ad</span>
+          <span class="b64-txt">B64</span><span class="ms">arrow_forward</span><span class="ms">text_ad</span>
         </span>
       </button>
       <button id="m-file" role="tab" aria-label="ファイルからBase64へ">
         <span class="label">ファイル → Base64</span>
         <span class="icons" aria-hidden="true">
           <span class="ms">folder</span><span class="ms">arrow_forward</span>
-          <img src="./B64.png" class="b64-img" alt="B64">
+          <span class="b64-txt">B64</span>
         </span>
       </button>
       <button id="m-b2f" role="tab" aria-label="Base64からファイルへ">
         <span class="label">Base64 → ファイル</span>
         <span class="icons" aria-hidden="true">
-          <img src="./B64.png" class="b64-img" alt="B64"><span class="ms">arrow_forward</span><span class="ms">folder</span>
+          <span class="b64-txt">B64</span><span class="ms">arrow_forward</span><span class="ms">folder</span>
         </span>
       </button>
       <button id="m-cam" role="tab" aria-label="QRからBase64へ">
         <span class="label">QR → Base64</span>
         <span class="icons" aria-hidden="true">
           <span class="ms">qr_code_2</span><span class="ms">arrow_forward</span>
-          <img src="./B64.png" class="b64-img" alt="B64">
+          <span class="b64-txt">B64</span>
         </span>
       </button>
       <button id="m-camtxt" role="tab" aria-label="QRからテキストへ">
@@ -232,7 +232,7 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
         <span class="label">QR複数 → Base64</span>
         <span class="icons" aria-hidden="true">
           <span class="icon-twins"><span class="ms a">qr_code_2</span><span class="ms b">qr_code_2</span></span>
-          <span class="ms">arrow_forward</span><img src="./B64.png" class="b64-img" alt="B64">
+          <span class="ms">arrow_forward</span><span class="b64-txt">B64</span>
         </span>
       </button>
       <button id="m-camtxt-multi" role="tab" aria-label="複数QRからテキストへ">
@@ -927,3 +927,4 @@ autosize(el.input);             // 入力テキスト自動リサイズ初期反
 </script>
 </body>
 </html>
+

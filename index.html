@@ -181,12 +181,12 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   transform: translateX(-50%) translateY(4px) scale(.98);
   background: rgba(33,33,33,.95);
   color: #fff;
-  padding: 6px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  max-width: min(260px, 80vw);
-  white-space: normal;
+  padding: 4px 6px;                /* 小さく */
+  border-radius: 6px;              /* 小さく */
+  font-size: 11px;                 /* 小さく */
+  line-height: 1.35;
+  white-space: nowrap;             /* 横一行に固定 */
+  writing-mode: horizontal-tb;     /* 横書きを明示 */
   box-shadow: 0 8px 24px rgba(0,0,0,.18);
   pointer-events: none;
   opacity: 0;
@@ -199,7 +199,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   bottom: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  border: 6px solid transparent;
+  border: 5px solid transparent;   /* 小さく */
   border-top-color: rgba(33,33,33,.95);
   opacity: 0;
   transition: opacity .12s ease-out, transform .12s ease-out;
@@ -212,6 +212,12 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 [data-tip]:focus-visible::before{
   opacity: 1;
   transform: translateX(-50%) translateY(0) scale(1);
+}
+
+/* PC時（日本語ラベルがフル表示）→ モードタブの吹き出しは非表示 */
+@media (min-width:901px){
+  .seg button[data-tip]::after,
+  .seg button[data-tip]::before{ content:none !important; }
 }
 
 /* ==== Hover Motion: 全ボタンを少し拡大＆明るく ==== */
@@ -585,6 +591,13 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr')
 };
 
+/* ====== 吹き出しにショートカット表記を付与 ====== */
+function applyShortcutTips(){
+  if(el.btnConvert)   el.btnConvert.setAttribute('data-tip','変換 (Ctrl+Enter)');
+  if(el.btnConvertQR) el.btnConvertQR.setAttribute('data-tip','変換＋QR (Shift+Enter)');
+}
+applyShortcutTips();
+
 /* ====== 説明文 ====== */
 const DESC = {
   ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です.',
@@ -855,7 +868,7 @@ function handleResult(str, slot){
 
     if (state.same >= STABLE_FRAMES){
       const h = fp32(str), now = Date.now(), last = seen.get(h) || 0;
-      if (now - last > DEDUPE_TTL){        // ← ここを DEDUPE_TTL に
+      if (now - last > DEDUPE_TTL){
         if (isTextCamMode()){
           ingestText(str);
           if (el.autoStopHL?.checked) stopScan();

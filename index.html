@@ -752,31 +752,61 @@ function tickCam(){
 }
 function handleResult(str, slot){
   if(!str){
-    if(slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; st.curr=''; st.same=0; slotState.set(slot,st); }
-    else { camD.curr=''; camD.same=0; }
+    if (slot!=null){
+      const st = slotState.get(slot) || { curr:'', same:0 };
+      st.curr=''; st.same=0; slotState.set(slot, st);
+    } else {
+      camD.curr=''; camD.same=0;
+    }
     return;
   }
-  const m=FRAME_RE.exec(str);
-  if(m){
-    const i=parseInt(m[1],10), payload=m[4];
-    const dup = rx.got.has(i) && rx.got.get(i)===payload;
-    if(!dup){ if(isTextCamMode()) ingestText(str); else ingestB64(str); }
-    if(slot!=null){ const st=slotState.get(slot)||{curr:'',same:0}; st.curr=''; st.same=0; slotState.set(slot,st); }
-    else { camD.curr=''; camD.same=0; }
+
+  // ヘッダ付きフレーム
+  const m = FRAME_RE.exec(str);
+  if (m){
+    const i = parseInt(m[1],10), payload = m[4];
+    const dup = rx.got.has(i) && rx.got.get(i) === payload;
+    if (!dup){
+      if (isTextCamMode()) ingestText(str);
+      else ingestB64(str);
+    }
+    if (slot!=null){
+      const st = slotState.get(slot) || { curr:'', same:0 };
+      st.curr=''; st.same=0; slotState.set(slot, st);
+    } else {
+      camD.curr=''; camD.same=0;
+    }
     return;
   }
-  const proc=(state)=>{
-    if(str===state.curr) state.same++; else { state.curr=str; state.same=1; }
-    if(state.same>=STABLE_FRAMES){
-      const h=fp32(str), now=Date.now(), last=seen.get(h)||0;
-      if(now-last>DEDUE_TTL){} // placeholder
+
+  // ヘッダなし（安定判定＋TTL重複排除）
+  const proc = (state) => {
+    if (str === state.curr) state.same++;
+    else { state.curr = str; state.same = 1; }
+
+    if (state.same >= STABLE_FRAMES){
+      const h = fp32(str), now = Date.now(), last = seen.get(h) || 0;
+      if (now - last > DEDUPE_TTL){        // ← ここを DEDUPE_TTL に
+        if (isTextCamMode()){
+          ingestText(str);
+          if (el.autoStopHL?.checked) stopScan();
+        } else {
+          ingestB64(str);
+        }
+        seen.set(h, now);
+        state.same = 0;
+      }
     }
   };
-  // 簡潔のため（元の処理は下で定義し直し）
+
+  if (slot!=null){
+    const st = slotState.get(slot) || { curr:'', same:0 };
+    proc(st); slotState.set(slot, st);
+  } else {
+    proc(camD);
+  }
 }
-const DEDUE_TTL = 8000; // typo-safe guard
-/* 元の headerless 受信ロジック（そのまま） */
-const seen = new Map(); // note: re-declared above, kept here for clarity
+
 
 /* ====== 変換/入出力 ====== */
 function convert(){
@@ -971,3 +1001,4 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
+

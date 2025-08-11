@@ -170,7 +170,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 #mode-desc{ padding:8px 10px !important; }
 #mode-desc .muted{ color:#616161; font-size:13px; }
 
-/* ==== Tooltip (吹き出し) using [data-tip] ==== */
+/* ==== Tooltip (吹き出し) ==== */
 [data-tip] { position: relative; }
 [data-tip]::after{
   content: attr(data-tip);
@@ -511,10 +511,10 @@ button:not(:disabled):focus-visible,
     </div>
   </section>
 
-  <!-- 目立たない開発トグル -->
+  <!-- 目立たない開発トグル（ワーカーは複数読み取り時のみ表示） -->
   <div id="dev-opts" class="muted">
     <label><input id="toggle-logs" type="checkbox"> 簡易ログ</label>
-    <label><input id="toggle-workers" type="checkbox"> Workerを使用してより高速化（β版）</label>
+    <label id="worker-opt" style="display:none"><input id="toggle-workers" type="checkbox"> Workerを使用してより高速化（β版）</label>
   </div>
 </div>
 
@@ -551,7 +551,7 @@ button:not(:disabled):focus-visible,
         <h3>モード</h3>
         <ul id="help-modes">
           <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。</li>
-          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
+          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
           <li><b>ファイル → Base64</b>：あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。</li>
           <li><b>Base64 → ファイル</b>：Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。</li>
           <li><b>QR → Base64</b>：QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。</li>
@@ -623,10 +623,10 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
   // logs / toggles
   logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close'),
-  workerToggle:$('toggle-workers')
+  workerToggle:$('toggle-workers'), workerOpt:$('worker-opt')
 };
 
-/* ====== 吹き出しショートカット（ボタンに追記） ====== */
+/* ====== 吹き出しショートカット ====== */
 function applyShortcutTips(){
   if(el.btnConvert)   el.btnConvert.setAttribute('data-tip','変換 (Ctrl+Enter)');
   if(el.btnConvertQR) el.btnConvertQR.setAttribute('data-tip','変換＋QR (Shift+Enter)');
@@ -634,9 +634,8 @@ function applyShortcutTips(){
 applyShortcutTips();
 
 /* ====== Worker Pool (ImageBitmap) ====== */
-/* 並列デコード: createImageBitmap を転送し、Worker内 OffscreenCanvas で jsQR を実行 */
-let USE_WORKERS = false;                    // ← デフォルトOFF（トグルでON/OFF）
-const WORKERS_IN_MULTI_ONLY = true;         // 複数QRモード時のみ並列化（推奨）
+let USE_WORKERS = false;                    // デフォルトOFF（トグルでON/OFF）
+const WORKERS_IN_MULTI_ONLY = true;         // 複数QRモード時のみ並列化
 
 let WORKERS = [];
 let WORKER_URL = '';
@@ -651,7 +650,7 @@ const DET_HOLD_MS = 180;                    // オーバーレイ保持
 const SLOT_MIN_MS = 45;                     // 45〜60ms 推奨
 const lastDispatch = new Map();             // slot -> last timestamp
 
-/* プール上下限（安全側の固定値） */
+/* プール上下限 */
 const MIN_POOL = 1;
 const MAX_POOL_HARD = 8;
 
@@ -822,7 +821,7 @@ function updateLog(){
 /* ====== 説明文 ====== */
 const DESC = {
   ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です.',
-  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
+  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
   FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。',
   B2F:'Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。',
   CAM_B64:'QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。',
@@ -960,7 +959,7 @@ async function startScan(){
   if(typeof jsQR==='undefined'){ alert('jsQRが読み込まれていません'); return; }
   if(!navigator.mediaDevices?.getUserMedia){ alert('このブラウザはカメラに未対応です'); return; }
   try{
-    if (USE_WORKERS) initWorkers(); // ← トグルON時のみ準備
+    if (USE_WORKERS && isMultiMode()) initWorkers(); // ← 複数読み取り時のみ準備
 
     camStream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }, audio:false
@@ -968,7 +967,7 @@ async function startScan(){
     el.cam.srcObject=camStream; await el.cam.play();
     ensureOverlaySize(); drawOverlayGrid();
 
-    if (USE_WORKERS && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
+    if (USE_WORKERS && isMultiMode() && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
 
     tickCam();
   }catch(e){ alert('カメラ起動に失敗: '+e.message); }
@@ -976,7 +975,7 @@ async function startScan(){
 function stopScan(){
   if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  teardownWorkers(); // OFF時も安全に片付け
+  teardownWorkers(); // モード離脱時も含め安全に破棄
 }
 function ensureOverlaySize(){
   const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;
@@ -1238,10 +1237,15 @@ function setMode(to){
   const showOutQR = (mode==='ENC' || mode==='DEC' || mode==='FILE');
   if (el.rowOutputRight) el.rowOutputRight.style.display = showOutQR ? 'flex' : 'none';
 
-  autoResize(el.input); autoResize(el.output);
+  /* Workerトグルの表示：QR複数の「読み込み」モードのみ */
+  const showWorkerOpt = (isCamMode() && isMultiMode());
+  if (el.workerOpt) el.workerOpt.style.display = showWorkerOpt ? 'inline-flex' : 'none';
 
-  // モード切替時：Worker使用中ならプールを調整
-  if (USE_WORKERS && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
+  /* 複数読み取りモードを離れたらワーカーは破棄（トグル状態は保持） */
+  if (!showWorkerOpt) teardownWorkers();
+  else if (USE_WORKERS && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
+
+  autoResize(el.input); autoResize(el.output);
 }
 
 /* ====== イベント ====== */
@@ -1321,10 +1325,14 @@ on(el.logClose,'click', ()=>{
   el.logPanel.setAttribute('aria-hidden','true');
 });
 
-/* Workerトグル：デフォルトOFF */
+/* Workerトグル：デフォルトOFF。複数読み取りモード以外では初期化しない */
 on(el.workerToggle,'change', ()=>{
   USE_WORKERS = !!el.workerToggle.checked;
   if (USE_WORKERS){
+    if (!(isCamMode() && isMultiMode())){
+      toast('Workerは「QR複数」入力モードでのみ使用されます');
+      return;
+    }
     initWorkers();
     if (camStream && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
   }else{

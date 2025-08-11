@@ -76,7 +76,7 @@ header h1 img{width:20px;height:20px;display:block}
 /* PC（広い時）＝日本語ラベルのみ表示 */
 @media(min-width:901px){
   .seg .i, .seg .arrow, .seg .b64-mark{ display:none !important; } /* ← PCは日本語だけ */
-  .seg .lbl{ display:inline !重要; }
+  .seg .lbl{ display:inline !important; }
 }
 
 /* スマホ：4列・アイコン＋矢印のみ表示（小さくして収まる） */
@@ -172,6 +172,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
 
 /* ==== Tooltip (吹き出し) using [data-tip] ==== */
 [data-tip] { position: relative; }
+
 [data-tip]::after{
   content: attr(data-tip);
   position: absolute;
@@ -180,12 +181,12 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   transform: translateX(-50%) translateY(4px) scale(.98);
   background: rgba(33,33,33,.95);
   color: #fff;
-  padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 4px 6px;                /* 小さく */
+  border-radius: 6px;              /* 小さく */
+  font-size: 11px;                 /* 小さく */
   line-height: 1.35;
-  white-space: nowrap;
-  writing-mode: horizontal-tb;
+  white-space: nowrap;             /* 横一行に固定 */
+  writing-mode: horizontal-tb;     /* 横書きを明示 */
   box-shadow: 0 8px 24px rgba(0,0,0,.18);
   pointer-events: none;
   opacity: 0;
@@ -198,7 +199,7 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   bottom: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  border: 5px solid transparent;
+  border: 5px solid transparent;   /* 小さく */
   border-top-color: rgba(33,33,33,.95);
   opacity: 0;
   transition: opacity .12s ease-out, transform .12s ease-out;
@@ -212,13 +213,14 @@ kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-r
   opacity: 1;
   transform: translateX(-50%) translateY(0) scale(1);
 }
+
 /* PC時（日本語ラベルがフル表示）→ モードタブの吹き出しは非表示 */
 @media (min-width:901px){
   .seg button[data-tip]::after,
   .seg button[data-tip]::before{ content:none !important; }
 }
 
-/* ==== Hover Motion ==== */
+/* ==== Hover Motion: 全ボタンを少し拡大＆明るく ==== */
 button, .icon-btn{
   transition: transform .08s ease-out, filter .15s ease-out, box-shadow .15s ease-out;
   will-change: transform, filter;
@@ -229,19 +231,21 @@ button:not(:disabled):hover,
   filter: brightness(1.06);
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
+/* キーボード操作でも同等のフィードバック */
 button:not(:disabled):focus-visible,
 .icon-btn:not(:disabled):focus-visible{
   outline: 2px solid var(--sec);
   outline-offset: 2px;
   transform: translateY(-1px) scale(1.03);
 }
+/* 既存のセグメントタブのホバーを上書きで拡張 */
 .seg button:hover:not(:disabled){
   transform: translateY(-1px) scale(1.03);
   filter: brightness(1.05);
   box-shadow: 0 2px 8px rgb(0 0 0 / .12);
 }
 
-/* ==== 簡易ログ ==== */
+/* ==== 簡易ログ（目立たないトグル＋浮遊パネル） ==== */
 #dev-opts{ align-self:flex-end; font-size:11px; opacity:.35; }
 #dev-opts label{ cursor:pointer; user-select:none; }
 #dev-opts input{ vertical-align:middle }
@@ -249,28 +253,15 @@ button:not(:disabled):focus-visible,
 #log-panel{
   position:fixed; right:12px; bottom:12px;
   width:min(360px,92vw); max-height:44vh; overflow:auto;
-  border:1px solid var(--br); border-radius:10px; padding:10px 10px 10px 10px;
+  border:1px solid var(--br); border-radius:10px; padding:10px;
   background:#fff; box-shadow:0 10px 24px rgba(0,0,0,.18);
   display:none; z-index:9998;
 }
-#log-panel h3{ margin:0 0 6px; font-size:13px; padding-right:24px; }
+#log-panel h3{ margin:0 0 6px; font-size:13px; }
 #log-panel pre{
   margin:0; font-size:12px; line-height:1.35; white-space:pre-wrap;
   font-family:ui-monospace,Menlo,Consolas,monospace;
 }
-/* ✕ボタン */
-.log-close-btn{
-  position:absolute; top:6px; right:6px;
-  width:22px; height:22px;
-  border:1px solid var(--br);
-  border-radius:999px;
-  background:#f3f4f6; color:#333;
-  cursor:pointer; line-height:1;
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; padding:0;
-}
-.log-close-btn:hover{ filter:brightness(.96); }
-.log-close-btn:active{ transform:scale(.96); }
 </style>
 
 <!-- QR & Scanner -->
@@ -459,7 +450,7 @@ button:not(:disabled):focus-visible,
       <div class="qr-scrub">
         <span id="elapsed" class="time">00:00</span>
         <input id="scrub" class="range" type="range" min="0" max="0" step="1" value="0"/>
-        <span id="duration" class="time">00:00</span>
+        <span id="duration" class="time">00:00</span> <!-- ← 残り時間を表示 -->
         <span id="frame-ind" class="muted">0 / 0</span>
       </div>
       <div class="qr-bottom">
@@ -528,7 +519,6 @@ button:not(:disabled):focus-visible,
 
 <!-- 簡易ログパネル -->
 <div id="log-panel" aria-live="polite" aria-hidden="true">
-  <button id="log-close" class="log-close-btn" aria-label="簡易ログを閉じる">×</button>
   <h3>簡易ログ</h3>
   <pre id="log-pre"></pre>
 </div>
@@ -628,10 +618,10 @@ const el = {
   // help
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
   // logs
-  logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close')
+  logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre')
 };
 
-/* ====== 吹き出しショートカット ====== */
+/* ====== 吹き出しショートカット（ボタンに追記） ====== */
 function applyShortcutTips(){
   if(el.btnConvert)   el.btnConvert.setAttribute('data-tip','変換 (Ctrl+Enter)');
   if(el.btnConvertQR) el.btnConvertQR.setAttribute('data-tip','変換＋QR (Shift+Enter)');
@@ -640,90 +630,71 @@ applyShortcutTips();
 
 /* ====== Worker Pool (ImageBitmap) ====== */
 /* 並列デコード: createImageBitmap を転送し、Worker内 OffscreenCanvas で jsQR を実行 */
-let WORKERS = [];            // Worker or null（終端済みは null）
+let WORKERS = [];
 let WORKER_URL = '';
-let IDLE = [];               // アイドルな worker index のスタック
+let IDLE = [];
+let WORKER_ALIVE = [];              // ① 追加: ワーカー生存フラグ
+let pendingShrink = 0;              // ① 追加: 縮小が足りない分
 let inFlightSlots = new Set();
 let detCache = [];                         // {corners:[{x,y}×4], ts:number}
-
 const DET_HOLD_MS = 180;                   // 検出枠を短時間残す
 const USE_WORKERS = true;                  // 無効化したい場合は false
-const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化
+const WORKERS_IN_MULTI_ONLY = true;        // 複数QRモード時のみ並列化（true推奨）
+
+/* ① 追記: プール上下限（ハード上限は“安全側”の固定値） */
 const MIN_POOL = 1;
-const MAX_POOL = Math.max(2, Math.min(8, (navigator.hardwareConcurrency||4)-1));
-let dispatchCursor = 0;                    // 巡回開始インデックス
-let adjustTimer = null;
+const MAX_POOL_HARD = 8; // 端末により 8〜12 程度までOK。まずは8。
 
-/* サポート判定 */
-function workerSupported(){
-  return ('Worker' in window) && ('createImageBitmap' in window) && (typeof OffscreenCanvas !== 'undefined');
-}
-
-/* 現在のアクティブWorker数 */
-function activeWorkerCount(){
-  let c=0; for(let i=0;i<WORKERS.length;i++){ if(WORKERS[i]) c++; }
-  return c;
-}
-
-/* 目標プール数（rows*cols をベースに） */
+/* ① 追記: rows×cols を最優先に望ましいプール数を算出 */
 function getDesiredPoolSize(){
-  if(!USE_WORKERS) return 0;
-  if(!workerSupported()) return 0;
-  if(WORKERS_IN_MULTI_ONLY && !isMultiMode()) return 0;
-  const r = parseInt(el.rows?.value||'2',10)||2;
-  const c = parseInt(el.cols?.value||'2',10)||2;
-  let desired = r*c;
-  desired = Math.max(MIN_POOL, Math.min(MAX_POOL, desired));
-  return desired;
+  const r = parseInt(el.rows?.value||'2', 10) || 2;
+  const c = parseInt(el.cols?.value||'2', 10) || 2;
+  const desired = isMultiMode() ? (r*c) : 1;
+  return Math.max(MIN_POOL, Math.min(MAX_POOL_HARD, desired));
 }
 
-/* Worker生成（1つ） */
-function spawnOneWorker(){
-  if(!WORKER_URL) WORKER_URL = makeWorkerURL();
-  const idx = WORKERS.length;
-  const w = new Worker(WORKER_URL);
-  w.onmessage = (ev)=>handleWorkerMsg(idx, ev.data);
-  WORKERS.push(w);
-  IDLE.push(idx);
+/* ① 追記: 現在の“生きている”プール数を数える */
+function countAlive(){
+  let n = 0;
+  for(let i=0;i<WORKER_ALIVE.length;i++) if (WORKER_ALIVE[i]) n++;
+  return n;
 }
 
-/* アイドルWorkerを1つ終了 */
-function retireOneIdleWorker(){
-  while(IDLE.length){
-    const idx = IDLE.pop();
-    const w = WORKERS[idx];
-    if(!w) continue; // 既に終了
-    try{ w.terminate(); }catch(_){}
-    WORKERS[idx] = null; // スロットは残す（indexを安定化）
-    return true;
+/* ① 追記: idleなワーカーを必要数 terminate（安全縮小） */
+function shrinkIdleIfNeeded(){
+  while (pendingShrink > 0 && IDLE.length > 0){
+    const idx = IDLE.pop();                // idle な index のみを狙って終了
+    if (!WORKER_ALIVE[idx]) continue;      // 既に死んでたらスキップ
+    try{ WORKERS[idx].terminate(); }catch(_){}
+    WORKER_ALIVE[idx] = false;
+    pendingShrink--;
   }
-  return false; // アイドルが無いので縮小不可（次の完了を待つ）
 }
 
-/* 目標プール数に合わせて増減 */
+/* ① 追記: 望ましいプール数に“近づける” */
 function ensurePoolSize(target){
-  if(!workerSupported() || !USE_WORKERS) return;
+  target = Math.max(MIN_POOL, Math.min(MAX_POOL_HARD, target|0));
+  const curAlive = countAlive();
 
-  target = Math.max(0, Math.min(MAX_POOL, target|0));
-  // 増やす
-  while(activeWorkerCount() < target){
-    spawnOneWorker();
-  }
-  // 減らす（アイドルがある範囲で徐々に）
-  while(activeWorkerCount() > target){
-    if(!retireOneIdleWorker()) break;
+  if (curAlive < target){
+    // 足りない分を作成
+    const need = target - curAlive;
+    for (let k=0; k<need; k++){
+      const idx = WORKERS.length;        // 新規 index
+      const w = new Worker(WORKER_URL);
+      w.onmessage = (ev)=>handleWorkerMsg(idx, ev.data);
+      WORKERS.push(w);
+      WORKER_ALIVE[idx] = true;
+      IDLE.push(idx);
+    }
+  } else if (curAlive > target){
+    // 多い分は idle から安全に縮小（足りなければ pendingShrink に積んで、戻り次第縮小）
+    pendingShrink += (curAlive - target);
+    shrinkIdleIfNeeded();
   }
 }
 
-/* 調整（デバウンス） */
-function scheduleAdjustWorkers(immediate=false){
-  if(!USE_WORKERS || !workerSupported()) return;
-  const apply = ()=> ensurePoolSize(getDesiredPoolSize());
-  if(immediate){ apply(); return; }
-  clearTimeout(adjustTimer);
-  adjustTimer = setTimeout(apply, 80);
-}
-
+/* ① 置換: 初期化を“行×列 優先”に */
 function makeWorkerURL(){
   const src = `
 'use strict';
@@ -760,30 +731,34 @@ onmessage = async (e) => {
 }
 
 function initWorkers(){
-  if(!USE_WORKERS || !workerSupported()) return;
-  if(!WORKER_URL) WORKER_URL = makeWorkerURL();
-  // 起動時の初期数は目標に合わせる（行列ベース）
-  ensurePoolSize(getDesiredPoolSize());
+  if(!USE_WORKERS) return;
+  if(!('Worker' in window) || !('createImageBitmap' in window) || typeof OffscreenCanvas==='undefined'){
+    console.log('[workers] unsupported -> fallback to main thread');
+    return;
+  }
+  if(WORKERS.length) return; // 既に初期化済み
+  WORKER_URL = makeWorkerURL();
+  ensurePoolSize(getDesiredPoolSize()); // ★ 行×列を優先して初期プールを決定
+  console.log('[workers] pool init (alive):', countAlive());
 }
 
 function teardownWorkers(){
   for(let i=0;i<WORKERS.length;i++){
-    const w = WORKERS[i];
-    if(!w) continue;
-    try{ w.terminate(); }catch(_){}
-    WORKERS[i] = null;
+    try{ WORKERS[i].terminate(); }catch(_){}
   }
-  IDLE.length = 0; inFlightSlots.clear();
+  WORKERS.length = 0;
+  IDLE.length = 0;
+  WORKER_ALIVE.length = 0;
+  pendingShrink = 0;
+  inFlightSlots.clear();
   if(WORKER_URL){ URL.revokeObjectURL(WORKER_URL); WORKER_URL=''; }
   detCache.length = 0;
-  dispatchCursor = 0;
 }
 
+/* Worker からの返信 */
 function handleWorkerMsg(idx, msg){
-  // 既に終端済みのスロットは無視
-  if(!WORKERS[idx]) return;
-
-  IDLE.push(idx);
+  // 生存しているワーカーのみIDLE復帰させる
+  if (WORKER_ALIVE[idx]) IDLE.push(idx);
   inFlightSlots.delete(msg.slot);
 
   // 検出結果（オーバーレイ用）
@@ -798,72 +773,45 @@ function handleWorkerMsg(idx, msg){
       ts: performance.now()
     });
   }
-  // データ取り込み（既存ロジックを活用）
+  // データ取り込み（既存ロジック）
   if(msg.ok && msg.data){
     if(isTextCamMode()) ingestText(msg.data);
     else ingestB64(msg.data);
   }
 
-  // 縮小要求がある場合、アイドル復帰のタイミングで止める
-  const desired = getDesiredPoolSize();
-  if(activeWorkerCount() > desired){
-    retireOneIdleWorker();
-  }
-
   // 簡易ログ：ワーカーの処理時間
   pushSample(perf.workerTimes, Number(msg.time)||0, 50);
+
+  // 余剰分があれば idle から縮小する
+  shrinkIdleIfNeeded();
 }
 
+/* 既存: スロットをプールへ投げる */
 async function dispatchSlots(slots){
-  if(activeWorkerCount() === 0) return;
-  const n = slots.length;
-  if(n === 0) return;
-
-  // 巡回開始位置を有効範囲に
-  if(dispatchCursor >= n) dispatchCursor = dispatchCursor % n;
-
-  // 空きワーカーがある限り、巡回しながら割り当て
-  let assigned = 0;
-  for(let step=0; step<n && IDLE.length; step++){
-    const i = (dispatchCursor + step) % n;
-    if(inFlightSlots.has(i)) continue;
-
+  if(!WORKERS.length) return;
+  for(let i=0;i<slots.length;i++){
+    if(!IDLE.length || inFlightSlots.has(i)) continue;
     const s = slots[i];
-
-    // 境界クランプ（Safari対策）
-    const vw = el.cam.videoWidth || 0, vh = el.cam.videoHeight || 0;
-    let sx = Math.max(0, Math.min(s.x, vw-1));
-    let sy = Math.max(0, Math.min(s.y, vh-1));
-    let sw = Math.max(1, Math.min(s.w, vw - sx));
-    let sh = Math.max(1, Math.min(s.h, vh - sy));
-    if(sw < 4 || sh < 4){ continue; }
-
     inFlightSlots.add(i);
     const idx = IDLE.pop();
-
-    // idx が生きていることを確認（縮小後の残骸を避ける）
-    if(idx==null || !WORKERS[idx]){ inFlightSlots.delete(i); continue; }
-
     try{
+      // Safari などで安全なクランプ（createImageBitmapの範囲例外を避ける）
+      const sx = Math.max(0, Math.min(s.x, el.cam.videoWidth  - 1));
+      const sy = Math.max(0, Math.min(s.y, el.cam.videoHeight - 1));
+      const sw = Math.max(1, Math.min(s.w, el.cam.videoWidth  - sx));
+      const sh = Math.max(1, Math.min(s.h, el.cam.videoHeight - sy));
+
       const bmp = await createImageBitmap(el.cam, sx, sy, sw, sh);
-      WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:sx, oy:sy }, [bmp]);
-      assigned++;
-      // 割り当てに成功したら巡回位置を次に進める
-      dispatchCursor = (i + 1) % n;
+      WORKERS[idx].postMessage({ bitmap:bmp, slot:i, ox:sx, oy:sy }, [bmp]); // 転送（コピーなし）
     }catch(_){
       inFlightSlots.delete(i);
-      // 失敗したら idx をアイドルに戻す（ただし生きていれば）
-      if(WORKERS[idx]) IDLE.push(idx);
+      // 取得失敗時は idx を再びidleへ戻して次ループへ
+      if (WORKER_ALIVE[idx]) IDLE.push(idx);
     }
-  }
-
-  // 割り当てが無ければ少し進めて starvation 回避
-  if(assigned === 0){
-    dispatchCursor = (dispatchCursor + 1) % n;
   }
 }
 
-/* ====== 簡易ログ（計測） ====== */
+/* ====== 簡易ログ（計測ユーティリティ） ====== */
 const perf = {
   rafLast: 0,
   rafSamples: [],
@@ -876,11 +824,11 @@ function fpsFromSamples(samples){ const a = avg(samples); return a>0 ? 1000/a : 
 function updateLog(){
   if(!el.logToggle?.checked) return;
   const fps = fpsFromSamples(perf.rafSamples);
-  const poolActive = activeWorkerCount();
-  const usePool = USE_WORKERS && workerSupported() && poolActive && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
   const avgWorker = avg(perf.workerTimes);
   const avgFallback = avg(perf.fallbackTimes);
   const vw = el.cam?.videoWidth||0, vh = el.cam?.videoHeight||0;
+  const poolActive = countAlive();           // ④ 追記: 実際に生きているワーカー数
   const inFlight = inFlightSlots.size||0;
   const idle = IDLE.length||0;
   let roiCount = 0, gridTxt = '1';
@@ -894,7 +842,7 @@ function updateLog(){
     `解像度: ${vw}×${vh} | モード: ${isMultiMode()? '複数QR':'単一QR'} | プール: ${usePool? 'ON':'OFF'}`,
     `fps(推定): ${fps.toFixed(1)}`,
     usePool
-      ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | inFlight ${inFlight} | idle ${idle} | poolActive ${poolActive}`
+      ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | poolActive ${poolActive} | inFlight ${inFlight} | idle ${idle}`
       : `fallback(jsQR): avg ${avgFallback.toFixed(1)} ms/ROI`,
     `ROI: ${roiCount} / grid ${gridTxt} | ROI余白: ${el.roiMargin?.value ?? 0}`,
     `ヘッダなし: ${el.noHdr?.checked ? 'ON（受信側ヘッダ無し）':'OFF（ヘッダ付き）'} | 安定判定: ${typeof STABLE_FRAMES!=='undefined'? STABLE_FRAMES:2}f | TTL: ${typeof DEDUPE_TTL!=='undefined'? DEDUPE_TTL:8000}ms`,
@@ -970,13 +918,14 @@ function renderQR(){
   const text=qrChunks[idx]||'';
   new QRCode(el.qrWrap,{text,width:300,height:300,correctLevel:QRCode.CorrectLevel.M});
 }
+/* ★ 右側は残り時間表示に変更 */
 function updateTime(){
   const total=qrChunks.length;
   const dur = total / fpsRate;
   const cur = (idx+1) / fpsRate;
   const remain = Math.max(0, dur - cur);
-  el.duration.textContent = fmt(remain);
-  el.elapsed.textContent  = fmt(cur);
+  el.duration.textContent = fmt(remain);  // 残り
+  el.elapsed.textContent  = fmt(cur);     // 経過
   el.frameInd.textContent=`${Math.min(idx+1,total)} / ${total}`;
 }
 function tickPlay(){
@@ -1043,7 +992,7 @@ async function startScan(){
   if(typeof jsQR==='undefined'){ alert('jsQRが読み込まれていません'); return; }
   if(!navigator.mediaDevices?.getUserMedia){ alert('このブラウザはカメラに未対応です'); return; }
   try{
-    // 並列化の準備＆行列に合わせてプール初期化
+    // 並列化の準備（対応環境のみ有効化）
     initWorkers();
 
     camStream = await navigator.mediaDevices.getUserMedia({
@@ -1052,8 +1001,8 @@ async function startScan(){
     el.cam.srcObject=camStream; await el.cam.play();
     ensureOverlaySize(); drawOverlayGrid();
 
-    // 実画像サイズが確定した後にも行列ベースで再調整
-    scheduleAdjustWorkers(true);
+    /* ② 追記: 起動直後に rows*cols の望ましいプールへ合わせる */
+    ensurePoolSize(getDesiredPoolSize());
 
     tickCam();
   }catch(e){ alert('カメラ起動に失敗: '+e.message); }
@@ -1062,6 +1011,7 @@ async function startScan(){
 function stopScan(){
   if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  // スキャン停止時にワーカーも片付け（次回 start で再初期化）
   teardownWorkers();
 }
 
@@ -1126,12 +1076,11 @@ function tickCam(){
   const slots=getSlots(); if(!slots.length){ rafId=requestAnimationFrame(tickCam); return; }
 
   // 並列デコードを使うか？
-  const poolActive = activeWorkerCount();
-  const usePool = USE_WORKERS && workerSupported() && poolActive && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
+  const usePool = USE_WORKERS && WORKERS.length && (!WORKERS_IN_MULTI_ONLY || isMultiMode());
 
   if(usePool){
     // スロットをワーカープールへ投げる（非同期）
-    dispatchSlots(slots); // awaitしない
+    dispatchSlots(slots); // awaitしない：描画は継続
 
     // オーバーレイ描画（直近の検出結果のみ保持）
     const t = performance.now();
@@ -1144,7 +1093,7 @@ function tickCam(){
     return;
   }
 
-  // === フォールバック（メインスレッド逐次デコード） ===
+  // === フォールバック（従来のメインスレッド逐次デコード） ===
   const dets=[];
   if(!isMultiMode()){
     ctx.drawImage(v,0,0,w,h);
@@ -1234,6 +1183,7 @@ function handleResult(str, slot){
     proc(camD);
   }
 }
+
 
 /* ====== 変換/入出力 ====== */
 function convert(){
@@ -1332,10 +1282,10 @@ function setMode(to){
   const showOutQR = (mode==='ENC' || mode==='DEC' || mode==='FILE');
   if (el.rowOutputRight) el.rowOutputRight.style.display = showOutQR ? 'flex' : 'none';
 
-  // モード変更に応じてワーカープールも調整
-  scheduleAdjustWorkers(true);
-
   autoResize(el.input); autoResize(el.output);
+
+  /* ③ 追加（任意）：モード切替時にも現在の望ましいプールへ“近づける” */
+  if (WORKER_URL) ensurePoolSize(getDesiredPoolSize());
 }
 
 /* ====== イベント ====== */
@@ -1398,14 +1348,8 @@ on(el.fpsNum,'change',()=>setFps(el.fpsNum.value));
 
 on(el.btnScanStart,'click',startScan);
 on(el.btnScanStop,'click',stopScan);
-el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); scheduleAdjustWorkers(true); });
+el.cam.addEventListener('loadedmetadata',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
 window.addEventListener('resize',()=>{ ensureOverlaySize(); drawOverlayGrid(); });
-
-/* 行・列の変更でワーカープール再調整 */
-on(el.rows, 'input', ()=>scheduleAdjustWorkers());
-on(el.cols, 'input', ()=>scheduleAdjustWorkers());
-on(el.rows, 'change', ()=>scheduleAdjustWorkers(true));
-on(el.cols, 'change', ()=>scheduleAdjustWorkers(true));
 
 if(navigator.share){ el.btnShare.style.display='inline-flex'; }
 
@@ -1415,12 +1359,16 @@ on(el.logToggle,'change', ()=>{
   el.logPanel.setAttribute('aria-hidden', el.logToggle.checked ? 'false':'true');
   updateLog();
 });
-/* ✕ボタン：簡易ログを閉じる（トグルもOFFに） */
-on(el.logClose,'click', ()=>{
-  if(el.logToggle){ el.logToggle.checked = false; }
-  el.logPanel.style.display = 'none';
-  el.logPanel.setAttribute('aria-hidden','true');
-});
+
+/* ③ 追記: 行・列変更でプールを rows*cols に“近づける” */
+function onGridChange(){
+  if (!WORKER_URL) return; // 未初期化ならスキップ
+  ensurePoolSize(getDesiredPoolSize());
+}
+on(el.rows,'input', onGridChange);
+on(el.cols,'input', onGridChange);
+on(el.rows,'change', onGridChange);
+on(el.cols,'change', onGridChange);
 
 function openHelp(){
   el.helpModal.classList.add('show'); el.helpModal.setAttribute('aria-hidden','false');
@@ -1450,4 +1398,3 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
-

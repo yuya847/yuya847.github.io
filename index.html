@@ -270,6 +270,8 @@ button:not(:disabled):focus-visible,
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
 <!-- pako (deflate/inflate) -->
 <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js" defer></script>
+<!-- ★ 追加: PDF生成（jsPDF） -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
 </head>
 <body>
 <header>
@@ -467,13 +469,25 @@ button:not(:disabled):focus-visible,
         </button>
         <div class="fps-wrap">
           <label for="fps">FPS</label>
-          <input id="fps" type="range" min="0.5" max="120" step="0.1" value="2"/>
-          <input id="fps-num" type="number" min="0.5" max="120" step="0.1" value="2"/>
+          <input id="fps" type="range" min="0.2" max="120" step="0.1" value="2"/>
+          <input id="fps-num" type="number" min="0.2" max="120" step="0.1" value="2"/>
         </div>
         <label class="nohdr" style="opacity:.7">
           <input id="no-header" type="checkbox" checked> ヘッダなし（電子カルテ向け）
         </label>
       </div>
+
+<!-- ★ 追加: A4 PDF 出力コントロール -->
+<div class="row" id="pdf-controls" style="justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:6px">
+  <label>PDF 行: <input id="pdf-rows" type="number" min="1" max="8" value="2" style="width:72px"></label>
+  <label>列: <input id="pdf-cols" type="number" min="1" max="8" value="4" style="width:72px"></label>
+  <label>余白(mm): <input id="pdf-margin" type="number" min="0" max="30" value="10" style="width:96px"></label>
+  <button id="btn-make-pdf" class="btn-pri" data-tip="A4にQRを並べてPDF出力">
+    <span class="material-symbols-outlined">picture_as_pdf</span>
+  </button>
+</div>
+
+      
     </div>
   </section>
 
@@ -629,6 +643,9 @@ const el = {
   workerToggle:$('toggle-workers'), workerOpt:$('worker-opt'),
   // 圧縮トグル
   compressToggle:$('toggle-compress'), compressOpt:$('compress-opt')
+  // ★ 追加: PDF出力
+  pdfRows:$('pdf-rows'), pdfCols:$('pdf-cols'), pdfMargin:$('pdf-margin'), btnMakePDF:$('btn-make-pdf'),
+
 };
 
 /* ====== 吹き出しショートカット ====== */
@@ -1308,6 +1325,140 @@ function setMode(to){
 
   autoResize(el.input); autoResize(el.output);
 }
+/* ====== PDF出力（A4, グリッド, 各QR下に i/total） ====== */
+
+// 指定サイズ(px)でQRのDataURL(PNG)を作る（qrcode.jsの出力形式差を吸収）
+function makeQrDataUrl(text, sizePx){
+  return new Promise(resolve=>{
+    const tmp = document.createElement('div');
+    tmp.style.position='absolute';
+    tmp.style.left='-99999px';
+    tmp.style.top='-99999px';
+    document.body.appendChild(tmp);
+
+    // 生成
+    /* eslint-disable no-new */
+    new QRCode(tmp, { text, width:sizePx, height:sizePx, correctLevel:QRCode.CorrectLevel.M });
+
+    // 少し遅延させてDOM確定
+    setTimeout(()=>{
+      const cv = tmp.querySelector('canvas');
+      const img = tmp.querySelector('img');
+
+      const finishFromCanvas = (canvas)=>{
+        try{
+          const url = canvas.toDataURL('image/png');
+          tmp.remove();
+          resolve(url);
+        }catch(_){ tmp.remove(); resolve(''); }
+      };
+
+      if (cv){ finishFromCanvas(cv); return; }
+
+      if (img){
+        if (img.complete){
+          const c=document.createElement('canvas');
+          c.width=sizePx; c.height=sizePx;
+          const ctx=c.getContext('2d');
+          ctx.drawImage(img,0,0,sizePx,sizePx);
+          finishFromCanvas(c);
+        }else{
+          img.onload = ()=>{
+            const c=document.createElement('canvas');
+            c.width=sizePx; c.height=sizePx;
+            const ctx=c.getContext('2d');
+            ctx.drawImage(img,0,0,sizePx,sizePx);
+            finishFromCanvas(c);
+          };
+          img.onerror = ()=>{ tmp.remove(); resolve(''); };
+        }
+        return;
+      }
+
+      // どちらも無いケース
+      tmp.remove();
+      resolve('');
+    }, 0);
+  });
+}
+
+// 印刷用のフレーム配列を生成（グリッド数に応じて分割を細かくして「同一でない」QRを確保）
+function buildPrintChunks(rows, cols){
+  const s = el.output?.value.trim() || '';
+  if (!s){ alert('出力が空です'); return null; }
+
+  const grid = Math.max(1, (parseInt(rows,10)||2) * (parseInt(cols,10)||4)); // 例: 2x4=8
+  const MAX_PER_QR = 700;                   // 既存送信と揃える最大ペイロード
+  const per = Math.max(1, Math.min(MAX_PER_QR, Math.ceil(s.length / grid))); // 1ページぶんは必ずユニークに
+
+  const withHeader = !(el.noHdr && el.noHdr.checked); // 電子カルテ想定なら「ヘッダなし」が既定
+  return withHeader ? splitFrames(s, per) : splitFramesNoHeader(s, per);
+}
+
+// A4 PDFを作成して保存
+async function makePDF(){
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('PDF生成ライブラリ(jsPDF)が読み込めませんでした'); return;
+  }
+  const rows = Math.max(1, parseInt(el.pdfRows?.value||'2',10));
+  const cols = Math.max(1, parseInt(el.pdfCols?.value||'4',10));
+  const margin = Math.max(0, parseFloat(el.pdfMargin?.value||'10'));
+
+  const chunks = buildPrintChunks(rows, cols);
+  if(!chunks || !chunks.length){ return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const gridW = Math.max(0, pageW - 2*margin);
+  const gridH = Math.max(0, pageH - 2*margin);
+  const cellW = gridW / cols;
+  const cellH = gridH / rows;
+
+  const labelH = 8;     // 各QRの下に確保するラベル高さ（mm）
+  const gap    = 2;     // QRとラベルの隙間（mm）
+  const pad    = 2;     // セル内の上下左右パディング（mm）
+  const qrSizeMm = Math.max(14, Math.min(cellW - pad*2, cellH - (labelH + gap) - pad*2)); // 最低14mm程度は確保
+
+  // 印刷で十分な解像度になるように、mm→pxをやや高めに（~240dpi相当）
+  const pxPerMm = 9.5; // 9.5px/mm ≒ 241dpi
+  const qrSizePx = Math.round(qrSizeMm * pxPerMm);
+
+  for (let i=0;i<chunks.length;i++){
+    if (i>0 && i % (rows*cols) === 0){ doc.addPage(); }
+
+    const idxOnPage = i % (rows*cols);
+    const r = Math.floor(idxOnPage / cols);
+    const c = idxOnPage % cols;
+
+    const x0 = margin + c*cellW + pad;
+    const y0 = margin + r*cellH + pad;
+    const innerW = cellW - pad*2;
+    const innerH = cellH - pad*2;
+
+    // セル内で縦方向も中央寄せ
+    const qrX = x0 + (innerW - qrSizeMm)/2;
+    const qrY = y0 + (innerH - (qrSizeMm + gap + labelH))/2;
+
+    // QR画像
+    const dataUrl = await makeQrDataUrl(chunks[i], qrSizePx);
+    if (dataUrl){
+      doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+    }
+
+    // ラベル: 「i/total」
+    const i1 = i+1, total = chunks.length;
+    const labelY = qrY + qrSizeMm + gap + (labelH/2);
+    doc.setFontSize(12);
+    doc.text(`${i1}/${total}`, x0 + innerW/2, labelY, { align:'center', baseline:'middle' });
+  }
+
+  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
+  doc.save(`qr_${rows}x${cols}_${ts}.pdf`);
+}
+
 
 /* ====== イベント ====== */
 on(el.mEnc,'click',()=>setMode('ENC'));
@@ -1357,12 +1508,14 @@ on(el.btnPlay,'click',()=>{
 on(el.scrub,'input',()=>{ idx=parseInt(el.scrub.value||'0',10)||0; renderQR(); updateTime(); });
 function setFps(v){
   let val=parseFloat(v); if(isNaN(val)) val=2.0;
-  val=Math.max(0.5, Math.min(120, val));
+  val=Math.max(0.2, Math.min(120, val));
   el.fps.value=String(val); el.fpsNum.value=val.toFixed(1); fpsRate=val; updateTime();
   if(playing){ playing=false; el.btnPlay.querySelector('.material-symbols-outlined').textContent='play_arrow';
     setTimeout(()=>{ playing=true; el.btnPlay.querySelector('.material-symbols-outlined').textContent='pause'; tickPlay(); },0);
   }
 }
+// ★ 追加: PDFボタン
+on(el.btnMakePDF, 'click', makePDF);
 on(el.fps,'input',()=>setFps(el.fps.value));
 on(el.fpsNum,'input',()=>setFps(el.fpsNum.value));
 on(el.fpsNum,'change',()=>setFps(el.fpsNum.value));
@@ -1430,3 +1583,4 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
+

@@ -268,6 +268,8 @@ button:not(:disabled):focus-visible,
 <!-- QR & Scanner -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
+<!-- pako (deflate/inflate) -->
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js" defer></script>
 </head>
 <body>
 <header>
@@ -511,10 +513,11 @@ button:not(:disabled):focus-visible,
     </div>
   </section>
 
-  <!-- 目立たない開発トグル（ワーカーは複数読み取り時のみ表示） -->
+  <!-- 目立たない開発トグル（ワーカーは複数読み取り時のみ表示 / 圧縮はENCの時のみ表示） -->
   <div id="dev-opts" class="muted">
     <label><input id="toggle-logs" type="checkbox"> 簡易ログ</label>
     <label id="worker-opt" style="display:none"><input id="toggle-workers" type="checkbox"> Workerを使用してより高速化（β版）</label>
+    <label id="compress-opt" style="display:none"><input id="toggle-compress" type="checkbox"> テキストを圧縮して送信（pako/deflate）</label>
   </div>
 </div>
 
@@ -551,7 +554,7 @@ button:not(:disabled):focus-visible,
         <h3>モード</h3>
         <ul id="help-modes">
           <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。</li>
-          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
+          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
           <li><b>ファイル → Base64</b>：あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。</li>
           <li><b>Base64 → ファイル</b>：Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。</li>
           <li><b>QR → Base64</b>：QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。</li>
@@ -623,7 +626,9 @@ const el = {
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
   // logs / toggles
   logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close'),
-  workerToggle:$('toggle-workers'), workerOpt:$('worker-opt')
+  workerToggle:$('toggle-workers'), workerOpt:$('worker-opt'),
+  // 圧縮トグル
+  compressToggle:$('toggle-compress'), compressOpt:$('compress-opt')
 };
 
 /* ====== 吹き出しショートカット ====== */
@@ -821,7 +826,7 @@ function updateLog(){
 /* ====== 説明文 ====== */
 const DESC = {
   ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です.',
-  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
+  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
   FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。',
   B2F:'Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。',
   CAM_B64:'QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。',
@@ -863,6 +868,45 @@ function b64ToUtf8(b64){
     return new TextDecoder('utf-8').decode(bytes);
   }
   return decodeURIComponent(escape(atob(clean)));
+}
+
+/* ==== Pako圧縮ヘルパー ==== */
+// bytes -> base64
+function u8ToB64(u8){
+  let bin=''; for(const b of u8) bin+=String.fromCharCode(b);
+  return btoa(bin);
+}
+// base64 -> bytes
+function b64ToU8(b64){
+  const clean = normalizeB64(b64);
+  const bin = atob(clean); const u8 = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return u8;
+}
+// 入力テキストを (必要なら) deflate してから Base64 に
+function maybeCompressTextToB64(str, enabled=true){
+  const enc = new TextEncoder().encode(str);
+  if (enabled && typeof pako!=='undefined'){
+    try{
+      const gz = pako.deflate(enc);
+      // ほぼ同等(±2%)なら採用しない
+      if (gz.length < enc.length * 0.98){
+        return 'gz:' + u8ToB64(gz);
+      }
+    }catch(_){}
+  }
+  return u8ToB64(enc); // 非圧縮
+}
+// Base64(または gz:Base64) を UTF-8テキストへ
+function decodeMaybeGzipToText(s){
+  const str = String(s||'');
+  if (str.startsWith('gz:')){
+    if (typeof pako==='undefined') throw new Error('pakoが見つかりません');
+    const u8 = b64ToU8(str.slice(3));
+    const plain = pako.inflate(u8);
+    return new TextDecoder('utf-8').decode(plain);
+  }
+  return b64ToUtf8(str);
 }
 
 /* ====== QR送出 ====== */
@@ -941,9 +985,9 @@ function ingestText(text){
   const r=appendHeaderedAndMaybeComplete(text);
   if(!r.matched){
     rxTxt.buffer+=text;
-    try{ el.output.value=b64ToUtf8(rxTxt.buffer); }catch(_){}
+    try{ el.output.value=decodeMaybeGzipToText(rxTxt.buffer); }catch(_){}
   }else if(r.complete){
-    try{ el.output.value=b64ToUtf8(r.payload); }catch(e){ toast('テキストに復号できませんでした',true); }
+    try{ el.output.value=decodeMaybeGzipToText(r.payload); }catch(e){ toast('テキストに復号できませんでした',true); }
   }
 }
 
@@ -1143,9 +1187,23 @@ function handleResult(str, slot){
 
 /* ====== 変換/入出力 ====== */
 function convert(){
-  const s=el.input?.value.trim(); if(!s){ alert('入力が空です'); return; }
-  try{ el.output.value = (mode==='ENC') ? utf8ToB64(s) : b64ToUtf8(s); }
-  catch(e){ alert('変換に失敗: '+e.message); }
+  const s=el.input?.value ?? '';
+  if(!s.trim()){ alert('入力が空です'); return; }
+  try{
+    if (mode==='ENC'){
+      // テキスト→Base64（圧縮トグルに従う）
+      const useZip = !!el.compressToggle?.checked;
+      el.output.value = maybeCompressTextToB64(s, useZip);
+    }else if (mode==='DEC'){
+      // Base64(または gz:Base64) → テキスト
+      el.output.value = decodeMaybeGzipToText(s);
+    }else{
+      // それ以外（互換維持）
+      el.output.value = (mode==='ENC') ? utf8ToB64(s) : b64ToUtf8(s);
+    }
+  }catch(e){
+    alert('変換に失敗: '+e.message);
+  }
 }
 function convertAndQR(){
   if(mode==='ENC'){ convert(); }
@@ -1240,6 +1298,9 @@ function setMode(to){
   /* Workerトグルの表示：QR複数の「読み込み」モードのみ */
   const showWorkerOpt = (isCamMode() && isMultiMode());
   if (el.workerOpt) el.workerOpt.style.display = showWorkerOpt ? 'inline-flex' : 'none';
+
+  /* 圧縮トグルは ENC のときだけ表示 */
+  if (el.compressOpt) el.compressOpt.style.display = (mode==='ENC') ? 'inline-flex' : 'none';
 
   /* 複数読み取りモードを離れたらワーカーは破棄（トグル状態は保持） */
   if (!showWorkerOpt) teardownWorkers();

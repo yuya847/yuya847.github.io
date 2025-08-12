@@ -281,7 +281,7 @@ button:not(:disabled):focus-visible,
       テキストQRコード変換
     </h1>
     <div class="header-actions">
-      <span id="ver" class="badge">ver 1.6</span>
+      <span id="ver" class="badge">ver 1.7</span>
       <button id="btn-help" class="icon-btn btn-sec" data-tip="ヘルプ">
         <span class="material-symbols-outlined">help</span>
       </button>
@@ -473,7 +473,7 @@ button:not(:disabled):focus-visible,
           <input id="fps-num" type="number" min="0.2" max="120" step="0.1" value="2"/>
         </div>
         <label class="nohdr" style="opacity:.7">
-          <input id="no-header" type="checkbox" checked> ヘッダなし（電子カルテ向け）
+          <input id="with-header" type="checkbox" checked> ヘッダーをつける
         </label>
       </div>
 
@@ -506,7 +506,7 @@ button:not(:disabled):focus-visible,
 
       <div class="rx-row" id="auto-stop-wrap" style="display:none; opacity:.75; font-size:13px">
         <label class="nohdr">
-          <input id="auto-stop-hl" type="checkbox"> ヘッダなしは1枚読んだら自動停止（QR→テキスト）
+          <input id="auto-stop-hl" type="checkbox"> ヘッダーなしは1枚読んだら自動停止（QR→テキスト）
         </label>
       </div>
 
@@ -523,7 +523,7 @@ button:not(:disabled):focus-visible,
       </div>
       <canvas id="cam-canvas" style="display:none"></canvas>
 
-      <div class="muted">受信進捗（ヘッダ付き時）: <span id="rx-status">0/0</span></div>
+      <div class="muted">受信進捗（ヘッダー付き時）: <span id="rx-status">0/0</span></div>
     </div>
   </section>
 
@@ -568,8 +568,8 @@ button:not(:disabled):focus-visible,
         <h3>モード</h3>
         <ul id="help-modes">
           <li><b>テキスト → Base64</b>：文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。電子カルテにスマートフォンでメモした文章を入力したいときなど便利です。</li>
-          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
-          <li><b>ファイル → Base64</b>：あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。</li>
+          <li><b>Base64 → テキスト</b>：Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。</li>
+          <li><b>ファイル → Base64</b>：あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXCELファイルなどを電子カルテに入力できます。</li>
           <li><b>Base64 → ファイル</b>：Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。</li>
           <li><b>QR → Base64</b>：QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。</li>
           <li><b>QR → テキスト</b>：QRコードから直接テキストに変換できます。電子カルテからファイルをBase64の形で受け取るときには使えません。</li>
@@ -599,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 'use strict';
 
 /* ====== バージョン ====== */
-const APP_VERSION='ver 1.6', APP_BUILD='2025-08-10';
+const APP_VERSION='ver 1.7', APP_BUILD='2025-08-11';
 document.getElementById('ver').textContent = APP_VERSION;
 
 /* ====== 要素 ====== */
@@ -629,7 +629,7 @@ const el = {
   qrSend:$('qr-send'), qrWrap:$('qr-display'), scrub:$('scrub'),
   elapsed:$('elapsed'), duration:$('duration'), frameInd:$('frame-ind'),
   btnPrev:$('btn-prev'), btnNext:$('btn-next'), btnPlay:$('btn-play'),
-  fps:$('fps'), fpsNum:$('fps-num'), noHdr:$('no-header'),
+  fps:$('fps'), fpsNum:$('fps-num'), withHdr:$('with-header'),
   // recv
   qrRecv:$('qr-recv'), cam:$('cam'), camCanvas:$('cam-canvas'), camOverlay:$('cam-overlay'),
   btnScanStart:$('btn-scan-start'), btnScanStop:$('btn-scan-stop'),
@@ -642,10 +642,9 @@ const el = {
   logToggle:$('toggle-logs'), logPanel:$('log-panel'), logPre:$('log-pre'), logClose:$('log-close'),
   workerToggle:$('toggle-workers'), workerOpt:$('worker-opt'),
   // 圧縮トグル
-  compressToggle:$('toggle-compress'), compressOpt:$('compress-opt')
+  compressToggle:$('toggle-compress'), compressOpt:$('compress-opt'),
   // ★ 追加: PDF出力
   pdfRows:$('pdf-rows'), pdfCols:$('pdf-cols'), pdfMargin:$('pdf-margin'), btnMakePDF:$('btn-make-pdf'),
-
 };
 
 /* ====== 吹き出しショートカット ====== */
@@ -835,7 +834,7 @@ function updateLog(){
       ? `worker: avg ${avgWorker.toFixed(1)} ms/ROI | poolActive ${poolActive} | inFlight ${inFlight} | idle ${idle}`
       : `fallback(jsQR): avg ${avgFallback.toFixed(1)} ms/ROI`,
     `ROI: ${roiCount} / grid ${gridTxt} | ROI余白: ${el.roiMargin?.value ?? 0}`,
-    `ヘッダなし: ${el.noHdr?.checked ? 'ON（受信側ヘッダ無し）':'OFF（ヘッダ付き）'} | 安定判定: ${typeof STABLE_FRAMES!=='undefined'? STABLE_FRAMES:2}f | TTL: ${typeof DEDUPE_TTL!=='undefined'? DEDUPE_TTL:8000}ms`,
+    `送信ヘッダー: ${el.withHdr?.checked ? 'ON（ヘッダー付き）':'OFF（ヘッダーなし）'} | 安定判定: ${typeof STABLE_FRAMES!=='undefined'? STABLE_FRAMES:2}f | TTL: ${typeof DEDUPE_TTL!=='undefined'? DEDUPE_TTL:8000}ms`,
   ];
   el.logPre.textContent = lines.join('\n');
 }
@@ -843,8 +842,8 @@ function updateLog(){
 /* ====== 説明文 ====== */
 const DESC = {
   ENC:'文章をBase64という文字列に変換します。Base64を介してQRコードに変換可能です。\n電子カルテにスマートフォンでメモした文章を入力したいときなど便利です.',
-  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n用途：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
-  FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXELファイルなどを電子カルテに入力できます。',
+  DEC:'Base64という文字列（電子カルテから送られてくる文字列データ）をテキストに変換します。\n：電子カルテからスキャンしたQRコードはBase64で書かれています。そのコードを日本語に変換するときに便利です。',
+  FILE:'あらゆるファイルをBase64という文字列に変換します。QRコードにすることで電子カルテに画像、PDF、EXCELファイルなどを電子カルテに入力できます。',
   B2F:'Base64からファイルに変換します。電子カルテからファイルをBase64に変換して受け取ったものを再度ファイルに変換することが可能です。',
   CAM_B64:'QRコードをBase64の形で受け取ります。電子カルテからファイルをBase64の形で受け取るときに使います。',
   CAM_TXT:'QRコードから直接テキストに変換できます。電子カルテからファイルをBase64の形で受け取るときには使えません。',
@@ -968,7 +967,7 @@ function buildSequence(){
   const s=el.output?.value.trim();
   if(!s){ alert('出力が空です'); return false; }
   const maxPayload=700;
-  const withHeader=!(el.noHdr && el.noHdr.checked);
+  const withHeader = !!(el.withHdr && el.withHdr.checked);
   qrChunks = withHeader ? splitFrames(s,maxPayload) : splitFramesNoHeader(s,maxPayload);
   idx=0; el.scrub.max=Math.max(qrChunks.length-1,0); el.scrub.value=0;
   renderQR(); updateTime();
@@ -1156,7 +1155,7 @@ function handleResult(str, slot){
     return;
   }
 
-  // ヘッダ付きフレーム
+  // ヘッダー付きフレーム
   const m = FRAME_RE.exec(str);
   if (m){
     const i = parseInt(m[1],10), payload = m[4];
@@ -1174,7 +1173,7 @@ function handleResult(str, slot){
     return;
   }
 
-  // ヘッダなし（安定判定＋TTL重複排除）
+  // ヘッダーなし（安定判定＋TTL重複排除）
   const proc = (state) => {
     if (str === state.curr) state.same++;
     else { state.curr = str; state.same = 1; }
@@ -1391,7 +1390,7 @@ function buildPrintChunks(rows, cols){
   const MAX_PER_QR = 700;                   // 既存送信と揃える最大ペイロード
   const per = Math.max(1, Math.min(MAX_PER_QR, Math.ceil(s.length / grid))); // 1ページぶんは必ずユニークに
 
-  const withHeader = !(el.noHdr && el.noHdr.checked); // 電子カルテ想定なら「ヘッダなし」が既定
+  const withHeader = !!(el.withHdr && el.withHdr.checked);
   return withHeader ? splitFrames(s, per) : splitFramesNoHeader(s, per);
 }
 
@@ -1583,4 +1582,3 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
-

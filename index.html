@@ -160,6 +160,24 @@ canvas.overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-eve
 .qr-cell{width:120px;height:120px;border:1px solid #eee;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff}
 kbd{background:#f2f3f7;border:1px solid #dcdfe6;border-bottom-width:2px;border-radius:4px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace}
 
+<!-- PDF Progress Modal (追加) -->
+<div id="pdf-progress" class="modal" aria-hidden="true">
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="pdf-pr-title" style="max-width:460px">
+    <div class="topbar" style="border:none;margin-bottom:4px">
+      <h2 id="pdf-pr-title" style="margin:0;font-size:16px">PDF を準備中…</h2>
+      <button id="btn-pdf-cancel" class="btn-err">キャンセル</button>
+    </div>
+    <div class="content" style="display:flex;flex-direction:column;gap:10px">
+      <div id="pdf-pr-label" class="muted">0/0 を生成中…</div>
+      <progress id="pdf-pr-bar" max="100" value="0" style="width:100%"></progress>
+      <div class="muted" style="font-size:12px">この処理は 10〜30 秒ほどかかります。</div>
+    </div>
+  </div>
+</div>
+/* 任意: progress の indeterminate 風（簡易） */
+progress:not([value]) { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%{opacity:.45} 50%{opacity:1} 100%{opacity:.45} }
+
 /* モバイル：縦並び */
 @media(max-width:640px){ .grid{ grid-template-columns:1fr } }
 
@@ -645,6 +663,11 @@ const el = {
   compressToggle:$('toggle-compress'), compressOpt:$('compress-opt'),
   // ★ 追加: PDF出力
   pdfRows:$('pdf-rows'), pdfCols:$('pdf-cols'), pdfMargin:$('pdf-margin'), btnMakePDF:$('btn-make-pdf'),
+ // ★ 追加: PDF進捗UI
+  pdfProg: $('pdf-progress'),
+  pdfProgLabel: $('pdf-pr-label'),
+  pdfProgBar: $('pdf-pr-bar'),
+  btnPDFCancel: $('btn-pdf-cancel'),
 };
 
 /* ====== 吹き出しショートカット ====== */
@@ -1347,6 +1370,59 @@ function setMode(to){
 
   autoResize(el.input); autoResize(el.output);
 }
+/* === PDF Progress helpers (追加) === */
+const pdfProgress = {
+  cancel:false,
+  open(total, perPage){
+    this.cancel = false;
+    if (!el.pdfProg) return;
+    el.pdfProg.classList.add('show');
+    el.pdfProg.setAttribute('aria-hidden','false');
+    // 実進捗（value/max）にする
+    if (el.pdfProgBar){
+      el.pdfProgBar.max = Math.max(1, total|0);
+      el.pdfProgBar.value = 0;
+    }
+    if (el.pdfProgLabel){
+      const pages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+      el.pdfProgLabel.textContent = `0/${total} を生成中…（ページ 0/${pages}）`;
+    }
+  },
+  async step(done, total, perPage){
+    if (!el.pdfProg) return;
+    const pages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+    const page = Math.min(pages, Math.floor((Math.max(1, done) - 1)/Math.max(1, perPage)) + 1);
+    if (el.pdfProgBar){
+      el.pdfProgBar.max = Math.max(1, total|0);
+      el.pdfProgBar.value = Math.min(total, done);
+    }
+    if (el.pdfProgLabel){
+      el.pdfProgLabel.textContent = `${done}/${total} を生成中…（ページ ${page}/${pages}）`;
+    }
+    // UIに描画させる
+    await new Promise(requestAnimationFrame);
+  },
+  close(){
+    if (!el.pdfProg) return;
+    el.pdfProg.classList.remove('show');
+    el.pdfProg.setAttribute('aria-hidden','true');
+  },
+  // 疑似進捗（総数が取れない/重すぎて更新できないブラウザ用の保険）
+  startPseudo(){
+    this.cancel = false;
+    if (!el.pdfProg) return;
+    el.pdfProg.classList.add('show');
+    el.pdfProg.setAttribute('aria-hidden','false');
+    if (el.pdfProgBar){
+      // indeterminate にする → max を外す
+      el.pdfProgBar.removeAttribute('max');
+      el.pdfProgBar.removeAttribute('value');
+    }
+    if (el.pdfProgLabel){
+      el.pdfProgLabel.textContent = 'PDF を準備中… この処理は 10〜30 秒ほどかかります';
+    }
+  }
+};
 /* ====== PDF出力（A4, グリッド, 各QR下に i/total） ====== */
 
 // 指定サイズ(px)でQRのDataURL(PNG)を作る（qrcode.jsの出力形式差を吸収）
@@ -1418,16 +1494,26 @@ function buildPrintChunks(rows, cols){
 }
 
 // A4 PDFを作成して保存
+// A4 PDFを作成して保存（進捗対応）
 async function makePDF(){
   if(!window.jspdf || !window.jspdf.jsPDF){
     alert('PDF生成ライブラリ(jsPDF)が読み込めませんでした'); return;
   }
+
   const rows = Math.max(1, parseInt(el.pdfRows?.value||'2',10));
   const cols = Math.max(1, parseInt(el.pdfCols?.value||'4',10));
   const margin = Math.max(0, parseFloat(el.pdfMargin?.value||'10'));
+  const perPage = Math.max(1, rows * cols);
 
   const chunks = buildPrintChunks(rows, cols);
-  if(!chunks || !chunks.length){ return; }
+  if(!chunks || !chunks.length){
+    // 総数が取れない/空の場合は疑似進捗にしておく
+    pdfProgress.startPseudo();
+    setTimeout(()=>pdfProgress.close(), 1200);
+    return;
+  }
+
+  const total = chunks.length;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4' });
@@ -1442,43 +1528,60 @@ async function makePDF(){
   const labelH = 8;     // 各QRの下に確保するラベル高さ（mm）
   const gap    = 2;     // QRとラベルの隙間（mm）
   const pad    = 2;     // セル内の上下左右パディング（mm）
-  const qrSizeMm = Math.max(14, Math.min(cellW - pad*2, cellH - (labelH + gap) - pad*2)); // 最低14mm程度は確保
+  const qrSizeMm = Math.max(14, Math.min(cellW - pad*2, cellH - (labelH + gap) - pad*2));
 
-  // 印刷で十分な解像度になるように、mm→pxをやや高めに（~240dpi相当）
-  const pxPerMm = 9.5; // 9.5px/mm ≒ 241dpi
+  const pxPerMm = 9.5; // ≒241dpi
   const qrSizePx = Math.round(qrSizeMm * pxPerMm);
 
-  for (let i=0;i<chunks.length;i++){
-    if (i>0 && i % (rows*cols) === 0){ doc.addPage(); }
+  // 進捗開始
+  pdfProgress.open(total, perPage);
 
-    const idxOnPage = i % (rows*cols);
-    const r = Math.floor(idxOnPage / cols);
-    const c = idxOnPage % cols;
+  try{
+    for (let i=0;i<total;i++){
+      if (pdfProgress.cancel){
+        pdfProgress.close();
+        toast('PDF生成をキャンセルしました', true);
+        return;
+      }
 
-    const x0 = margin + c*cellW + pad;
-    const y0 = margin + r*cellH + pad;
-    const innerW = cellW - pad*2;
-    const innerH = cellH - pad*2;
+      if (i>0 && i % perPage === 0){
+        doc.addPage();
+      }
 
-    // セル内で縦方向も中央寄せ
-    const qrX = x0 + (innerW - qrSizeMm)/2;
-    const qrY = y0 + (innerH - (qrSizeMm + gap + labelH))/2;
+      const idxOnPage = i % perPage;
+      const r = Math.floor(idxOnPage / cols);
+      const c = idxOnPage % cols;
 
-    // QR画像
-    const dataUrl = await makeQrDataUrl(chunks[i], qrSizePx);
-    if (dataUrl){
-      doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+      const x0 = margin + c*cellW + pad;
+      const y0 = margin + r*cellH + pad;
+      const innerW = cellW - pad*2;
+      const innerH = cellH - pad*2;
+
+      const qrX = x0 + (innerW - qrSizeMm)/2;
+      const qrY = y0 + (innerH - (qrSizeMm + gap + labelH))/2;
+
+      // QR画像生成
+      const dataUrl = await makeQrDataUrl(chunks[i], qrSizePx);
+      if (dataUrl){
+        doc.addImage(dataUrl, 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+      }
+
+      // ラベル（i/total）
+      const labelY = qrY + qrSizeMm + gap + (labelH/2);
+      doc.setFontSize(12);
+      doc.text(`${i+1}/${total}`, x0 + innerW/2, labelY, { align:'center', baseline:'middle' });
+
+      // 進捗更新（i+1 完了）
+      await pdfProgress.step(i+1, total, perPage);
     }
 
-    // ラベル: 「i/total」
-    const i1 = i+1, total = chunks.length;
-    const labelY = qrY + qrSizeMm + gap + (labelH/2);
-    doc.setFontSize(12);
-    doc.text(`${i1}/${total}`, x0 + innerW/2, labelY, { align:'center', baseline:'middle' });
+    const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
+    doc.save(`qr_${rows}x${cols}_${ts}.pdf`);
+  }catch(e){
+    alert('PDF生成に失敗: ' + e.message);
+  }finally{
+    pdfProgress.close();
   }
-
-  const ts = new Date().toISOString().replace(/[-:T]/g,'').slice(0,12);
-  doc.save(`qr_${rows}x${cols}_${ts}.pdf`);
 }
 
 
@@ -1538,6 +1641,8 @@ function setFps(v){
 }
 // ★ 追加: PDFボタン
 on(el.btnMakePDF, 'click', makePDF);
+on(el.btnPDFCancel, 'click', ()=>{ pdfProgress.cancel = true; });
+
 on(el.fps,'input',()=>setFps(el.fps.value));
 on(el.fpsNum,'input',()=>setFps(el.fpsNum.value));
 on(el.fpsNum,'change',()=>setFps(el.fpsNum.value));
@@ -1605,4 +1710,5 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
+
 

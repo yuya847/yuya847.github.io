@@ -1035,7 +1035,16 @@ async function startScan(){
 function stopScan(){
   if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  teardownWorkers(); // モード離脱時も含め安全に破棄
+  // ← 追加: オーバーレイ消去＆検出キャッシュをリセット
+  try{
+    const ctx = el.camOverlay?.getContext?.('2d');
+    if(ctx){
+      ctx.clearRect(0,0,el.camOverlay.width||0,el.camOverlay.height||0);
+    }
+  }catch(_){}
+  detCache.length = 0;
+  inFlightSlots.clear();
+  teardownWorkers(); // 既存のままでOK（複数QR用ワーカー破棄）
 }
 function ensureOverlaySize(){
   const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;
@@ -1273,8 +1282,22 @@ function autoResize(ta){
 
 /* ====== モード切替 ====== */
 function setMode(to){
-  tabState[mode].in = el.input?.value ?? ''; tabState[mode].out = el.output?.value ?? '';
-  mode=to;
+ // 追加: 切替のたびに一旦カメラ停止（安全側）
+  // （カメラ系→カメラ系でも毎回クリーンに切り替えたい場合に有効）
+  stopScan();
+
+  // もし「カメラ系→カメラ系」は停止したくない場合は、
+  // const wasCam = isCamMode();
+  // ・・・
+  // mode = to;
+  // const nowCam = /^CAM_/.test(to);
+  // if (wasCam && !nowCam) stopScan();
+  // のように分岐させてください。
+
+  tabState[mode].in = el.input?.value ?? '';
+  tabState[mode].out = el.output?.value ?? '';
+  mode = to;
+
   [el.mEnc,el.mDec,el.mFile,el.mB2F,el.mCamB64,el.mCamTxt,el.mCamB64M,el.mCamTxtM].forEach(b=>b?.classList.remove('sel'));
   ({ENC:el.mEnc,DEC:el.mDec,FILE:el.mFile,B2F:el.mB2F,CAM_B64:el.mCamB64,CAM_TXT:el.mCamTxt,CAM_B64_MULTI:el.mCamB64M,CAM_TXT_MULTI:el.mCamTxtM})[mode]?.classList.add('sel');
 
@@ -1582,3 +1605,4 @@ function toast(msg,bad=false){
 </script>
 </body>
 </html>
+

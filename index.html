@@ -169,7 +169,7 @@ progress:not([value]) { animation: pulse 1.2s ease-in-out infinite; }
 @media(max-width:640px){ .grid{ grid-template-columns:1fr } }
 
 /* Motion reduce */
-@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !重要; } }
 
 /* 軽めの説明 */
 #mode-desc{ padding:8px 10px !important; }
@@ -529,6 +529,8 @@ button:not(:disabled):focus-visible,
       <canvas id="cam-canvas" style="display:none"></canvas>
 
       <div class="muted">受信進捗（ヘッダー付き時）: <span id="rx-status">0/0</span></div>
+      <!-- ★ 追加: 欠落フレーム表示 -->
+      <div class="muted" id="rx-missing" aria-live="polite" style="font-size:13px"></div>
     </div>
   </section>
 
@@ -658,6 +660,7 @@ const el = {
   autoStopWrap:$('auto-stop-wrap'), autoStopHL:$('auto-stop-hl'),
   gridOpts:$('grid-opts'), rows:$('rows'), cols:$('cols'), roiMargin:$('roi-margin'),
   rxStatus:$('rx-status'),
+  rxMissing:$('rx-missing'), // ★ 追加
   // help
   helpModal:$('help-modal'), btnHelp:$('btn-help'), btnHelpClose:$('btn-help-close'), helpQR:$('help-qr'),
   // logs / toggles
@@ -999,17 +1002,45 @@ function buildSequence(){
 /* ====== 受信（カメラ） ====== */
 const rx={ total:0, got:new Map() };
 const rxTxt={ buffer:'' };
+
+/* ★ 追加: 欠落フレームUI更新 */
+function updateRxMissing(){
+  if(!el.rxMissing) return;
+  if(!rx.total){
+    el.rxMissing.textContent = '';
+    return;
+  }
+  const missing=[];
+  for(let k=1;k<=rx.total;k++){
+    if(!rx.got.has(k)) missing.push(k);
+  }
+  if(missing.length===0){
+    el.rxMissing.textContent = '欠落フレームはありません。';
+  }else{
+    const items = missing.map(n=>`フレーム${n}/${rx.total}`);
+    el.rxMissing.textContent = items.join('、') + ' が欠落しています';
+  }
+}
+
 function appendHeaderedAndMaybeComplete(frame){
   const m=FRAME_RE.exec(String(frame).trim()); if(!m) return {matched:false};
   const i=parseInt(m[1],10), total=parseInt(m[2],10), sum=parseInt(m[3],10), payload=m[4];
-  if (checksum(payload)!==sum){ toast('チェックサム不一致',true); return {matched:true,ok:false}; }
-  if (!rx.total) rx.total=total; if(rx.total!==total){ toast('総フレーム数が一致しません',true); return {matched:true,ok:false}; }
+  if (checksum(payload)!==sum){ toast('チェックサム不一致',true); updateRxMissing(); return {matched:true,ok:false}; }
+  if (!rx.total) rx.total=total;
+  if(rx.total!==total){ toast('総フレーム数が一致しません',true); updateRxMissing(); return {matched:true,ok:false}; }
   const dup = rx.got.has(i) && rx.got.get(i)===payload;
-  rx.got.set(i,payload); el.rxStatus.textContent=`${rx.got.size}/${rx.total}`;
+  rx.got.set(i,payload);
+  el.rxStatus.textContent=`${rx.got.size}/${rx.total}`;
+  updateRxMissing(); // ★ 更新
+
   if(dup) return {matched:true,ok:true,complete:false};
+
   if(rx.got.size===rx.total){
-    const parts=[]; for(let k=1;k<=rx.total;k++){ const p=rx.got.get(k); if(typeof p!=='string'){ toast(`欠落:${k}`,true); return {matched:true,ok:false}; } parts.push(p); }
-    const joined=parts.join(''); rx.total=0; rx.got.clear(); el.rxStatus.textContent='0/0';
+    const parts=[]; for(let k=1;k<=rx.total;k++){ const p=rx.got.get(k); if(typeof p!=='string'){ toast(`欠落:${k}`,true); updateRxMissing(); return {matched:true,ok:false}; } parts.push(p); }
+    const joined=parts.join('');
+    rx.total=0; rx.got.clear();
+    el.rxStatus.textContent='0/0';
+    updateRxMissing(); // ★ クリア
     return {matched:true,ok:true,complete:true,payload:joined};
   }
   return {matched:true,ok:true,complete:false};
@@ -1066,6 +1097,11 @@ function stopScan(){
   detCache.length = 0;
   inFlightSlots.clear();
   teardownWorkers();
+
+  // ★ 欠落表示・進捗をクリア
+  rx.total = 0; rx.got.clear();
+  if(el.rxStatus) el.rxStatus.textContent = '0/0';
+  updateRxMissing();
 }
 function ensureOverlaySize(){
   const vw=el.cam.videoWidth||1280, vh=el.cam.videoHeight||720;

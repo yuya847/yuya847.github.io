@@ -538,7 +538,10 @@ button:not(:disabled):focus-visible,
   <div id="dev-opts" class="muted">
     <label><input id="toggle-logs" type="checkbox"> 簡易ログ</label>
     <label id="worker-opt" style="display:none"><input id="toggle-workers" type="checkbox"> Workerを使用してより高速化（β版）</label>
-    <label id="compress-opt" style="display:none"><input id="toggle-compress" type="checkbox"> テキストを圧縮して送信（pako/deflate）</label>
+ <label id="compress-opt" style="display:none">
+  <input id="toggle-compress" type="checkbox" checked>
+  テキスト/ファイルを圧縮して送信（pako/deflate）
+</label>
   </div>
 </div>
 
@@ -963,6 +966,19 @@ function maybeCompressU8ToB64(u8, enabled=true){
   return u8ToB64(u8);
 }
 
+// ★ 追加: バイナリ(Uint8Array)の圧縮→Base64
+function maybeCompressBytesToB64(u8, enabled=true){
+  if (enabled && typeof pako!=='undefined'){
+    try{
+      const gz = pako.deflate(u8);
+      // 効果が薄い時は非圧縮（閾値はテキストと同じ 98%）
+      if (gz.length < u8.length * 0.98){
+        return { b64: 'gz:' + u8ToB64(gz), ratio: gz.length / u8.length, compressed: true };
+      }
+    }catch(_){}
+  }
+  return { b64: u8ToB64(u8), ratio: 1, compressed: false };
+}
 
 /* ====== QR送出 ====== */
 const fmt=t=>{const s=Math.max(0,Math.floor(t));const m=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');return `${m}:${ss}`;};
@@ -1320,9 +1336,21 @@ async function pasteTo(elm){
 }
 function handleFiles(files){
   if(!files?.length) return;
-  const f=files[0]; const r=new FileReader();
-  r.onload=e=>{ const b64=(String(e.target.result).split(',')[1]||''); el.output.value=b64; toast(f.name+' をBase64化しました'); };
-  r.readAsDataURL(f);
+  const f = files[0];
+  const r = new FileReader();
+  r.onload = e => {
+    const buf = e.target.result;
+    const u8  = new Uint8Array(buf);
+    const useZip = !!el.compressToggle?.checked;
+    const { b64, ratio, compressed } = maybeCompressBytesToB64(u8, useZip);
+    el.output.value = b64;
+    if (compressed){
+      toast(`${f.name} をBase64化＋圧縮しました（${(ratio*100).toFixed(1)}%）`);
+    }else{
+      toast(`${f.name} をBase64化しました（圧縮なし/効果なし）`);
+    }
+  };
+  r.readAsArrayBuffer(f);
 }
 function saveFile(){
   const b64=el.input?.value.trim(); if(!b64){ alert('Base64を入力してください'); return; }
@@ -1331,18 +1359,28 @@ function saveFile(){
     xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     png:'image/png', jpg:'image/jpeg', mp4:'video/mp4', exe:'application/vnd.microsoft.portable-executable', bin:'application/octet-stream' };
   try{
-    let dataU8;
+    let bytes;
     if (b64.startsWith('gz:')){
-      const gz = b64ToU8(b64.slice(3));
-      if (typeof pako==='undefined') throw new Error('圧縮データの展開に pako が必要です');
-      dataU8 = pako.inflate(gz);
+      if (typeof pako==='undefined') throw new Error('pakoが見つかりません（解凍）');
+      const gz = b64ToU8(b64.slice(3));   // ★ normalizeB64 は b64ToU8 内で実行
+      bytes = pako.inflate(gz);
     }else{
-      dataU8 = b64ToU8(b64);
+      const clean=normalizeB64(b64);
+      const bin=atob(clean);
+      const arr=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      bytes = arr;
     }
-    const blob=new Blob([dataU8],{type:mimeMap[ext]||'application/octet-stream'});
-    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${name}.${ext}`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
-  }catch(e){ alert('保存に失敗: '+e.message); }
+
+    const blob=new Blob([bytes],{type:mimeMap[ext]||'application/octet-stream'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`${name}.${ext}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }catch(e){
+    alert('保存に失敗: '+e.message);
+  }
 }
 
 
@@ -1399,7 +1437,7 @@ function setMode(to){
   const showWorkerOpt = (isCamMode() && isMultiMode());
   if (el.workerOpt) el.workerOpt.style.display = showWorkerOpt ? 'inline-flex' : 'none';
 
-  if (el.compressOpt) el.compressOpt.style.display = (mode==='ENC' || mode==='FILE') ? 'inline-flex' : 'none';
+if (el.compressOpt) el.compressOpt.style.display = (mode==='ENC' || mode==='FILE') ? 'inline-flex' : 'none';
 
   if (!showWorkerOpt) teardownWorkers();
   else if (USE_WORKERS && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
@@ -1807,4 +1845,5 @@ function toast(msg,bad=false){
 </div>
 </body>
 </html>
+
 

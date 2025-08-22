@@ -1034,24 +1034,26 @@ const rx={ total:0, got:new Map() };
 const rxTxt={ buffer:'' };
 
 /* ★ 追加: 欠落フレームUI更新 */
+/* ★ 変更: 欠落フレームをレンジ表記で表示（例: 5–8、11、13–15） */
 function updateRxMissing(){
   if(!el.rxMissing) return;
-  if(!rx.total){
-    el.rxMissing.textContent = '';
-    return;
-  }
+  if(!rx.total){ el.rxMissing.textContent=''; return; }
   const missing=[];
-  for(let k=1;k<=rx.total;k++){
-    if(!rx.got.has(k)) missing.push(k);
+  for(let k=1;k<=rx.total;k++){ if(!rx.got.has(k)) missing.push(k); }
+  if(missing.length===0){ el.rxMissing.textContent='欠落フレームはありません。'; return; }
+  // 連番を圧縮（5–8、11、13–15 のようにまとめる）
+  const ranges=[]; let start=null, prev=null;
+  for(const n of missing){
+    if(start===null){ start=n; prev=n; continue; }
+    if(n===prev+1){ prev=n; continue; }
+    ranges.push(start===prev ? `${start}` : `${start}\u2013${prev}`); // \u2013 は en-dash
+    start=n; prev=n;
   }
-  if(missing.length===0){
-    el.rxMissing.textContent = '欠落フレームはありません。';
-  }else{
-    const items = missing.map(n=>`フレーム${n}/${rx.total}`);
-    el.rxMissing.textContent = items.join('、') + ' が欠落しています';
-  }
+  if(start!==null) ranges.push(start===prev ? `${start}` : `${start}\u2013${prev}`);
+  el.rxMissing.textContent = `フレーム${ranges.join('、')} が欠落しています`;
+  // 総フレーム数も併記したい場合は ↑ を次に置き換え:
+  // el.rxMissing.textContent = `フレーム${ranges.join('、')} が欠落しています（全${rx.total}）`;
 }
-
 function appendHeaderedAndMaybeComplete(frame){
   const m=FRAME_RE.exec(String(frame).trim()); if(!m) return {matched:false};
   const i=parseInt(m[1],10), total=parseInt(m[2],10), sum=parseInt(m[3],10), payload=m[4];
@@ -1845,5 +1847,6 @@ function toast(msg,bad=false){
 </div>
 </body>
 </html>
+
 
 

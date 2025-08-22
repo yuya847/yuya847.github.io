@@ -950,6 +950,20 @@ function decodeMaybeGzipToText(s){
   return b64ToUtf8(str);
 }
 
+function maybeCompressU8ToB64(u8, enabled=true){
+  if (enabled && typeof pako!=='undefined'){
+    try{
+      const gz = pako.deflate(u8);
+      // 圧縮後がほぼ同等以下のときだけ採用（例: 98% しきい値）
+      if (gz.length < u8.length * 0.98){
+        return 'gz:' + u8ToB64(gz);
+      }
+    }catch(_){}
+  }
+  return u8ToB64(u8);
+}
+
+
 /* ====== QR送出 ====== */
 const fmt=t=>{const s=Math.max(0,Math.floor(t));const m=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');return `${m}:${ss}`;};
 const checksum=str=>{let s=0;for(let i=0;i<str.length;i++) s=(s+str.charCodeAt(i))&0xffff;return s;};
@@ -1317,13 +1331,20 @@ function saveFile(){
     xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     png:'image/png', jpg:'image/jpeg', mp4:'video/mp4', exe:'application/vnd.microsoft.portable-executable', bin:'application/octet-stream' };
   try{
-    const clean=normalizeB64(b64), bin=atob(clean); const arr=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-    const blob=new Blob([arr],{type:mimeMap[ext]||'application/octet-stream'});
+    let dataU8;
+    if (b64.startsWith('gz:')){
+      const gz = b64ToU8(b64.slice(3));
+      if (typeof pako==='undefined') throw new Error('圧縮データの展開に pako が必要です');
+      dataU8 = pako.inflate(gz);
+    }else{
+      dataU8 = b64ToU8(b64);
+    }
+    const blob=new Blob([dataU8],{type:mimeMap[ext]||'application/octet-stream'});
     const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${name}.${ext}`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
   }catch(e){ alert('保存に失敗: '+e.message); }
 }
+
 
 /* Autosize */
 function autoResize(ta){
@@ -1378,7 +1399,7 @@ function setMode(to){
   const showWorkerOpt = (isCamMode() && isMultiMode());
   if (el.workerOpt) el.workerOpt.style.display = showWorkerOpt ? 'inline-flex' : 'none';
 
-  if (el.compressOpt) el.compressOpt.style.display = (mode==='ENC') ? 'inline-flex' : 'none';
+  if (el.compressOpt) el.compressOpt.style.display = (mode==='ENC' || mode==='FILE') ? 'inline-flex' : 'none';
 
   if (!showWorkerOpt) teardownWorkers();
   else if (USE_WORKERS && WORKER_URL) ensurePoolSize(getDesiredPoolSize());
@@ -1786,3 +1807,4 @@ function toast(msg,bad=false){
 </div>
 </body>
 </html>
+
